@@ -1,0 +1,19 @@
+{
+  "textureWidth": 16,
+  "textureHeight": 16,
+  "elements": [
+    {
+      "name": "body",
+      "from": [2, 4, 2],
+      "to": [14, 12, 14],
+      "faces": {
+        "north": { "uv": [2, 4, 14, 12], "texture": "#minecart" },
+        "south": { "uv": [2, 4, 14, 12], "texture": "#minecart" },
+        "east":  { "uv": [2, 4, 14, 12], "texture": "#minecart" },
+        "west":  { "uv": [2, 4, 14, 12], "texture": "#minecart" },
+        "up":    { "uv": [2, 2, 14, 14], "texture": "#minecart" },
+        "down":  { "uv": [2, 2, 14, 14], "texture": "#minecart" }
+      }
+    }
+  ]
+}

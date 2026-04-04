@@ -1,0 +1,12 @@
+{
+  "code": "minecart",
+  "class": "ItemMinecart",
+  "maxstacksize": 1,
+  "shape": { "base": "vintagecarts:item/minecart" },
+  "textures": {
+    "minecart": { "base": "vintagecarts:item/minecart" }
+  },
+  "creativeInventory": {
+    "Vintagecarts//Items": ["*"]
+  }
+}

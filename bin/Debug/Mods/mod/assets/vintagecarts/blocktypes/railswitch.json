@@ -1,0 +1,39 @@
+{
+  "code": "railswitch",
+  "class": "BlockRail",
+  "entityClass": "BlockEntityRailSwitch",
+  "variantgroups": [
+    {
+      "code": "orientation",
+      "values": ["t-n", "t-s", "t-e", "t-w", "cross"]
+    }
+  ],
+  "drawtype": "json",
+  "walkspeedmul": 1.4,
+  "resistance": 2.0,
+  "materialDensity": 7000,
+  "blockmaterial": "Metal",
+  "sounds": {
+    "walk": "walk/stone",
+    "hit": "hit/stone",
+    "place": "place/stone",
+    "break": "break/stone"
+  },
+  "collisionbox": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 0.125, "z2": 1.0 },
+  "textures": {
+    "rail": { "base": "vintagecarts:block/rail" }
+  },
+  "shapeByType": {
+    "*-t-n": { "base": "vintagecarts:block/rail-t" },
+    "*-t-s": { "base": "vintagecarts:block/rail-t", "rotateY": 180 },
+    "*-t-e": { "base": "vintagecarts:block/rail-t", "rotateY": 90 },
+    "*-t-w": { "base": "vintagecarts:block/rail-t", "rotateY": 270 },
+    "*-cross": { "base": "vintagecarts:block/rail-cross" }
+  },
+  "drops": [
+    { "type": "block", "code": "vintagecarts:rail", "quantity": { "avg": 1 } }
+  ],
+  "creativeInventory": {
+    "Vintagecarts//Rails": ["*"]
+  }
+}

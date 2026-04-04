@@ -1,0 +1,46 @@
+{
+  "code": "rail",
+  "class": "BlockRail",
+  "variantgroups": [
+    {
+      "code": "orientation",
+      "values": ["ns", "ew", "ne", "nw", "se", "sw"]
+    }
+  ],
+  "drawtype": "json",
+  "walkspeedmul": 1.4,
+  "resistance": 2.0,
+  "materialDensity": 7000,
+  "blockmaterial": "Metal",
+  "sounds": {
+    "walk": "walk/stone",
+    "hit": "hit/stone",
+    "place": "place/stone",
+    "break": "break/stone"
+  },
+  "collisionboxByType": {
+    "*-ns": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 0.125, "z2": 1.0 },
+    "*-ew": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 0.125, "z2": 1.0 },
+    "*-ne": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 0.125, "z2": 1.0 },
+    "*-nw": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 0.125, "z2": 1.0 },
+    "*-se": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 0.125, "z2": 1.0 },
+    "*-sw": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 0.125, "z2": 1.0 }
+  },
+  "textures": {
+    "rail": { "base": "vintagecarts:block/rail" }
+  },
+  "shapeByType": {
+    "*-ns": { "base": "vintagecarts:block/rail-straight" },
+    "*-ew": { "base": "vintagecarts:block/rail-straight", "rotateY": 90 },
+    "*-ne": { "base": "vintagecarts:block/rail-curve" },
+    "*-nw": { "base": "vintagecarts:block/rail-curve", "rotateY": 270 },
+    "*-se": { "base": "vintagecarts:block/rail-curve", "rotateY": 90 },
+    "*-sw": { "base": "vintagecarts:block/rail-curve", "rotateY": 180 }
+  },
+  "drops": [
+    { "type": "block", "code": "vintagecarts:rail", "quantity": { "avg": 1 } }
+  ],
+  "creativeInventory": {
+    "Vintagecarts//Rails": ["*"]
+  }
+}

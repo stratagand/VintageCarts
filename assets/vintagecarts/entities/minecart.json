@@ -1,0 +1,37 @@
+{
+  "code": "minecart",
+  "class": "EntityMinecart",
+  "habitat": "Land",
+  "hitboxSize": { "x": 0.9, "y": 0.7 },
+  "deadHitboxSize": { "x": 0.9, "y": 0.3 },
+  "eyeHeight": 0.9,
+  "weight": 200,
+  "drops": [
+    {
+      "type": "item",
+      "code": "vintagecarts:minecart",
+      "quantity": { "avg": 1 }
+    }
+  ],
+  "sounds": {},
+  "client": {
+    "renderer": "Shape",
+    "shape": { "base": "vintagecarts:entity/minecart" },
+    "textures": { "minecart": { "base": "vintagecarts:entity/minecart" } },
+    "size": 1.0,
+    "behaviors": [
+      { "code": "interpolateposition" }
+    ]
+  },
+  "server": {
+    "behaviors": [
+      {
+        "code": "passivephysics",
+        "groundDragFactor": 0,
+        "airDragFactor": 0,
+        "gravityFactor": 0
+      },
+      { "code": "health", "currenthealth": 20, "maxhealth": 20 }
+    ]
+  }
+}

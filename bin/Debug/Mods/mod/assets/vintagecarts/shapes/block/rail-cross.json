@@ -1,0 +1,58 @@
+{
+  "textureWidth": 16,
+  "textureHeight": 16,
+  "elements": [
+    {
+      "name": "ns-rail-w",
+      "from": [1, 0, 0],
+      "to": [3, 2, 16],
+      "faces": {
+        "north": { "uv": [0, 0, 2, 2], "texture": "#rail" },
+        "south": { "uv": [0, 0, 2, 2], "texture": "#rail" },
+        "east":  { "uv": [0, 0, 16, 2], "texture": "#rail" },
+        "west":  { "uv": [0, 0, 16, 2], "texture": "#rail" },
+        "up":    { "uv": [1, 0, 3, 16], "texture": "#rail" },
+        "down":  { "uv": [1, 0, 3, 16], "texture": "#rail" }
+      }
+    },
+    {
+      "name": "ns-rail-e",
+      "from": [13, 0, 0],
+      "to": [15, 2, 16],
+      "faces": {
+        "north": { "uv": [0, 0, 2, 2], "texture": "#rail" },
+        "south": { "uv": [0, 0, 2, 2], "texture": "#rail" },
+        "east":  { "uv": [0, 0, 16, 2], "texture": "#rail" },
+        "west":  { "uv": [0, 0, 16, 2], "texture": "#rail" },
+        "up":    { "uv": [13, 0, 15, 16], "texture": "#rail" },
+        "down":  { "uv": [13, 0, 15, 16], "texture": "#rail" }
+      }
+    },
+    {
+      "name": "ew-rail-n",
+      "from": [0, 0, 1],
+      "to": [16, 2, 3],
+      "faces": {
+        "east":  { "uv": [0, 0, 2, 2], "texture": "#rail" },
+        "west":  { "uv": [0, 0, 2, 2], "texture": "#rail" },
+        "north": { "uv": [0, 0, 16, 2], "texture": "#rail" },
+        "south": { "uv": [0, 0, 16, 2], "texture": "#rail" },
+        "up":    { "uv": [0, 1, 16, 3], "texture": "#rail" },
+        "down":  { "uv": [0, 1, 16, 3], "texture": "#rail" }
+      }
+    },
+    {
+      "name": "ew-rail-s",
+      "from": [0, 0, 13],
+      "to": [16, 2, 15],
+      "faces": {
+        "east":  { "uv": [0, 0, 2, 2], "texture": "#rail" },
+        "west":  { "uv": [0, 0, 2, 2], "texture": "#rail" },
+        "north": { "uv": [0, 0, 16, 2], "texture": "#rail" },
+        "south": { "uv": [0, 0, 16, 2], "texture": "#rail" },
+        "up":    { "uv": [0, 13, 16, 15], "texture": "#rail" },
+        "down":  { "uv": [0, 13, 16, 15], "texture": "#rail" }
+      }
+    }
+  ]
+}

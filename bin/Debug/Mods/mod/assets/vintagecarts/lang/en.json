@@ -1,0 +1,23 @@
+{
+  "vintagecarts:block-rail-name": "Rail",
+  "vintagecarts:block-railslope-name": "Rail Slope",
+  "vintagecarts:block-railswitch-name": "Rail Switch",
+  "vintagecarts:block-rail-ns-name": "Rail (N-S)",
+  "vintagecarts:block-rail-ew-name": "Rail (E-W)",
+  "vintagecarts:block-rail-ne-name": "Rail (NE curve)",
+  "vintagecarts:block-rail-nw-name": "Rail (NW curve)",
+  "vintagecarts:block-rail-se-name": "Rail (SE curve)",
+  "vintagecarts:block-rail-sw-name": "Rail (SW curve)",
+  "vintagecarts:block-railswitch-t-n-name": "Rail Switch (T, blocked N)",
+  "vintagecarts:block-railswitch-t-s-name": "Rail Switch (T, blocked S)",
+  "vintagecarts:block-railswitch-t-e-name": "Rail Switch (T, blocked E)",
+  "vintagecarts:block-railswitch-t-w-name": "Rail Switch (T, blocked W)",
+  "vintagecarts:block-railswitch-cross-name": "Rail Switch (Cross)",
+  "vintagecarts:block-railslope-n-name": "Rail Slope (high N)",
+  "vintagecarts:block-railslope-s-name": "Rail Slope (high S)",
+  "vintagecarts:block-railslope-e-name": "Rail Slope (high E)",
+  "vintagecarts:block-railslope-w-name": "Rail Slope (high W)",
+  "vintagecarts:item-minecart-name": "Minecart",
+  "vintagecarts:item-creature-minecart": "Minecart",
+  "vintagecarts:item-dead-creature-minecart": "Broken Minecart"
+}

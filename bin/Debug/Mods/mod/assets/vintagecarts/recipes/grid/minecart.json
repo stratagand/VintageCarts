@@ -1,0 +1,9 @@
+{
+  "ingredientPattern": "I I,I I,III",
+  "ingredients": {
+    "I": { "type": "item", "code": "game:ingot-iron" }
+  },
+  "width": 3,
+  "height": 3,
+  "output": { "type": "item", "code": "vintagecarts:minecart", "quantity": 1 }
+}

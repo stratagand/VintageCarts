@@ -1,0 +1,17 @@
+{
+    "$schema": "https://moddbcdn.vintagestory.at/schema/modinfo.latest.json",
+    "type": "Code",
+    "modid": "vintagecarts",
+    "name": "VintageCarts",
+    "authors": [
+        "VintageStoryMods"
+    ],
+    "description": "Adds fuel-powered rideable minecarts and auto-connecting rail tracks to Vintage Story.",
+    "version": "1.0.0",
+    "side": "Universal",
+    "requiredOnClient": true,
+    "requiredOnServer": true,
+    "dependencies": {
+        "game": "1.20.0"
+    }
+}
