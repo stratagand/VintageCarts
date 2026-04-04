@@ -120,29 +120,51 @@ public class EntityMinecart : Entity, IMountable
 
     // ── Game Tick ──────────────────────────────────────────────────────────
 
+    private (Block? rail, BlockPos? pos) FindRailUnder()
+    {
+        // Check current block, one below, and two below to handle edge-of-block Y positions.
+        BlockPos p = Pos.AsBlockPos;
+        for (int dy = 0; dy <= 2; dy++)
+        {
+            BlockPos check = dy == 0 ? p : p.DownCopy(dy);
+            Block b = World.BlockAccessor.GetBlock(check);
+            if (b is BlockRail) return (b, check);
+        }
+        return (null, null);
+    }
+
     public override void OnGameTick(float dt)
     {
+        if (Api.Side == EnumAppSide.Server)
+        {
+            // PRE-PHYSICS: if on a flat rail, zero any downward motion so passivephysics
+            // cannot pull the cart into the rail block during its integration step.
+            var (preRail, preRailPos) = FindRailUnder();
+            if (preRail != null && !preRail.Code.Path.StartsWith("railslope"))
+            {
+                if (Pos.Motion.Y < 0) Pos.Motion.Y = 0;
+                if (ServerPos.Motion.Y < 0) ServerPos.Motion.Y = 0;
+                // Also pin Y before physics so passivephysics starts from the correct position.
+                double railTop = preRailPos!.Y + 0.125;
+                Pos.Y = railTop;
+                ServerPos.Y = railTop;
+            }
+        }
+
         base.OnGameTick(dt);
 
         if (Api.Side != EnumAppSide.Server) return;
 
-        // Determine if the cart is sitting on a rail
-        BlockPos entityBlockPos = Pos.AsBlockPos;
-        Block blockAt   = World.BlockAccessor.GetBlock(entityBlockPos);
-        Block blockBelow = World.BlockAccessor.GetBlock(entityBlockPos.DownCopy());
+        // POST-PHYSICS: re-detect and snap again (belt-and-braces).
+        var (railBlock, railPos) = FindRailUnder();
 
-        Block railBlock = (blockAt is BlockRail) ? blockAt : (blockBelow is BlockRail ? blockBelow : null);
-        BlockPos railPos = (blockAt is BlockRail) ? entityBlockPos : (blockBelow is BlockRail ? entityBlockPos.DownCopy() : null);
-
-        bool onRail = railBlock != null;
-
-        if (onRail)
+        if (railBlock != null)
         {
-            HandleRailMovement(railBlock!, railPos!, dt);
+            HandleRailMovement(railBlock, railPos!, dt);
         }
         else
         {
-            // Apply gravity manually (passivephysics gravity is disabled on this entity)
+            // Apply gravity manually (passivephysics gravity is disabled on this entity).
             Pos.Motion.Y = Math.Max(Pos.Motion.Y - 0.04f * dt * 20f, -0.5f);
             ApplyFriction(dt);
         }

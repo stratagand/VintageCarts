@@ -29,3 +29,4 @@ C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\m
 C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\textures\block\rail.png
 C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\textures\entity\minecart.png
 C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\textures\item\minecart.png
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\obj\Debug\VintageCarts.sourcelink.json
