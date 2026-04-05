@@ -1,46 +1,150 @@
 {
-  "code": "rail",
-  "class": "BlockRail",
-  "variantgroups": [
-    {
-      "code": "orientation",
-      "values": ["ns", "ew", "ne", "nw", "se", "sw"]
+    "code": "rail",
+    "class": "BlockRail",
+    "variantgroups": [
+        {
+            "code": "type",
+            "states": [
+                "curved_es",
+                "curved_sw",
+                "curved_wn",
+                "curved_ne",
+                "flat_ns",
+                "flat_we",
+                "raised_ns",
+                "raised_we"
+            ]
+        }
+    ],
+    "drawtype": "json",
+    "walkspeedmul": 1.4,
+    "resistance": 2.0,
+    "materialDensity": 7000,
+    "blockmaterial": "Wood",
+    "sounds": {
+        "place": "block/planks",
+        "hit": "block/planks",
+        "break": "block/planks",
+        "walk": "walk/wood"
+    },
+    	"guiTransform": {
+		"translation": { "x": 0, "y": 2, "z": 0 },
+		"origin": { "x": 0.5, "y": 0.0625, "z": 0.5 },
+		"scale": 1.3
+	},
+	"tpHandTransform": {
+		"translation": { "x": -1.2, "y": -0.4, "z": -1.3 },
+		"rotation": { "x": -68, "y": 0, "z": 0 },
+		"origin": { "x": 0.5, "y": 0.1, "z": 0.5 },
+		"scale": 0.4
+	},
+	"groundTransform": {
+		"origin": { "x": 0.5, "y": 0, "z": 0.5 },
+		"scale": 2
+	},
+	"fpHandTransform": {
+		"translation": { "x": 0, "y": 0.1, "z": 0 },
+		"rotation": { "x": 0, "y": -50, "z": 67 },
+		"origin": { "x": 0.5, "y": 0.13, "z": 0.5 }
+	},
+    "collisionboxByType": {
+        "*-ns": {
+            "x1": 0.0,
+            "y1": 0.0,
+            "z1": 0.0,
+            "x2": 1.0,
+            "y2": 0.125,
+            "z2": 1.0
+        },
+        "*-ew": {
+            "x1": 0.0,
+            "y1": 0.0,
+            "z1": 0.0,
+            "x2": 1.0,
+            "y2": 0.125,
+            "z2": 1.0
+        },
+        "*-ne": {
+            "x1": 0.0,
+            "y1": 0.0,
+            "z1": 0.0,
+            "x2": 1.0,
+            "y2": 0.125,
+            "z2": 1.0
+        },
+        "*-nw": {
+            "x1": 0.0,
+            "y1": 0.0,
+            "z1": 0.0,
+            "x2": 1.0,
+            "y2": 0.125,
+            "z2": 1.0
+        },
+        "*-se": {
+            "x1": 0.0,
+            "y1": 0.0,
+            "z1": 0.0,
+            "x2": 1.0,
+            "y2": 0.125,
+            "z2": 1.0
+        },
+        "*-sw": {
+            "x1": 0.0,
+            "y1": 0.0,
+            "z1": 0.0,
+            "x2": 1.0,
+            "y2": 0.125,
+            "z2": 1.0
+        }
+    },
+    "textures:": {
+        "wood": {
+            "base": "block/wood/planks/generic"
+        }
+    },
+    "sidesolid": {
+        "all": false
+    },
+    "sideopaque": {
+        "all": false
+    },
+    "shapeByType": {
+        "*-curved_sw": {
+            "base": "block/wood/rails/curved_es",
+            "rotateY": 270
+        },
+        "*-curved_wn": {
+            "base": "block/wood/rails/curved_es",
+            "rotateY": 180
+        },
+        "*-curved_ne": {
+            "base": "block/wood/rails/curved_es",
+            "rotateY": 90
+        },
+        "*-flat_we": {
+            "base": "block/wood/rails/flat_ns",
+            "rotateY": 90
+        },
+        "*-raised_we": {
+            "base": "block/wood/rails/raised_ns",
+            "rotateY": 90
+        },
+        "*": {
+            "base": "block/wood/rails/{type}"
+        },
+    },
+    "drops": [
+        {
+            "type": "block",
+            "code": "vintagecarts:rail",
+            "quantity": {
+                "avg": 1
+            }
+        }
+    ],
+    "creativeInventory": {
+        "Vintagecarts//Rails": [
+            "*"
+        ]
     }
-  ],
-  "drawtype": "json",
-  "walkspeedmul": 1.4,
-  "resistance": 2.0,
-  "materialDensity": 7000,
-  "blockmaterial": "Metal",
-  "sounds": {
-    "walk": "walk/stone",
-    "hit": "hit/stone",
-    "place": "place/stone",
-    "break": "break/stone"
-  },
-  "collisionboxByType": {
-    "*-ns": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 0.125, "z2": 1.0 },
-    "*-ew": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 0.125, "z2": 1.0 },
-    "*-ne": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 0.125, "z2": 1.0 },
-    "*-nw": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 0.125, "z2": 1.0 },
-    "*-se": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 0.125, "z2": 1.0 },
-    "*-sw": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 0.125, "z2": 1.0 }
-  },
-  "textures": {
-    "rail": { "base": "vintagecarts:block/rail" }
-  },
-  "shapeByType": {
-    "*-ns": { "base": "vintagecarts:block/rail-straight" },
-    "*-ew": { "base": "vintagecarts:block/rail-straight", "rotateY": 90 },
-    "*-ne": { "base": "vintagecarts:block/rail-curve" },
-    "*-nw": { "base": "vintagecarts:block/rail-curve", "rotateY": 270 },
-    "*-se": { "base": "vintagecarts:block/rail-curve", "rotateY": 90 },
-    "*-sw": { "base": "vintagecarts:block/rail-curve", "rotateY": 180 }
-  },
-  "drops": [
-    { "type": "block", "code": "vintagecarts:rail", "quantity": { "avg": 1 } }
-  ],
-  "creativeInventory": {
-    "Vintagecarts//Rails": ["*"]
-  }
 }

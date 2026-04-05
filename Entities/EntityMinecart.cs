@@ -15,8 +15,8 @@ namespace VintageCarts.Entities;
 
 public class EntityMinecart : Entity, IMountable
 {
-    private const float MaxSpeed = 5f;
-    private const float Acceleration = 1.5f;
+    private const float MaxSpeed = 20f;
+    private const float Acceleration = 3.0f;
     private const float Friction = 2f;
     private const float RiderYOffset = 0.35f;
 
@@ -261,9 +261,13 @@ public class EntityMinecart : Entity, IMountable
         BlockFacing exit = (railBlock as BlockRail)!.GetExitFacing(orientation, entry, switchState, World, railPos);
         travelDirection = exit;
 
-        // Align cart visually with travel direction.
-        Pos.Yaw = FacingToYaw(exit);
-        ServerPos.Yaw = Pos.Yaw;
+        // Avoid snapping the rider's camera: keep yaw fixed while someone is mounted.
+        // We still align yaw when unmounted so parked carts face track direction.
+        if (!hasPassenger)
+        {
+            Pos.Yaw = FacingToYaw(exit);
+            ServerPos.Yaw = Pos.Yaw;
+        }
 
         Vec3d targetMotion = FacingToMotion(exit);
 
@@ -296,11 +300,71 @@ public class EntityMinecart : Entity, IMountable
             }
         }
 
-        Pos.Motion.Set(targetMotion.X * newSpeed, targetMotion.Y * newSpeed, targetMotion.Z * newSpeed);
-        ServerPos.Motion.Set(targetMotion.X * newSpeed, targetMotion.Y * newSpeed, targetMotion.Z * newSpeed);
+        // If track ends ahead, clamp movement to this rail's boundary and stop immediately.
+        bool hasRailAhead = HasRailAhead(railPos, exit);
+        bool reachedRailEnd = false;
 
-        Pos.X += targetMotion.X * newSpeed * dt;
-        Pos.Z += targetMotion.Z * newSpeed * dt;
+        double nextX = Pos.X + targetMotion.X * newSpeed * dt;
+        double nextZ = Pos.Z + targetMotion.Z * newSpeed * dt;
+
+        if (!hasRailAhead && newSpeed > 0)
+        {
+            const double edgePad = 0.001;
+
+            if (exit == BlockFacing.SOUTH)
+            {
+                double maxZ = railPos.Z + 1.0 - edgePad;
+                if (nextZ >= maxZ)
+                {
+                    nextZ = maxZ;
+                    reachedRailEnd = true;
+                }
+            }
+            else if (exit == BlockFacing.NORTH)
+            {
+                double minZ = railPos.Z + edgePad;
+                if (nextZ <= minZ)
+                {
+                    nextZ = minZ;
+                    reachedRailEnd = true;
+                }
+            }
+            else if (exit == BlockFacing.EAST)
+            {
+                double maxX = railPos.X + 1.0 - edgePad;
+                if (nextX >= maxX)
+                {
+                    nextX = maxX;
+                    reachedRailEnd = true;
+                }
+            }
+            else if (exit == BlockFacing.WEST)
+            {
+                double minX = railPos.X + edgePad;
+                if (nextX <= minX)
+                {
+                    nextX = minX;
+                    reachedRailEnd = true;
+                }
+            }
+        }
+
+        Pos.X = nextX;
+        Pos.Z = nextZ;
+
+        if (reachedRailEnd)
+        {
+            newSpeed = 0;
+            travelDirection = null;
+            _isReversing = false;
+            Pos.Motion.Set(0, 0, 0);
+            ServerPos.Motion.Set(0, 0, 0);
+        }
+        else
+        {
+            Pos.Motion.Set(targetMotion.X * newSpeed, targetMotion.Y * newSpeed, targetMotion.Z * newSpeed);
+            ServerPos.Motion.Set(targetMotion.X * newSpeed, targetMotion.Y * newSpeed, targetMotion.Z * newSpeed);
+        }
 
         if (orientation is "ns" or "n" or "s")
             Pos.X = railPos.X + 0.5;
@@ -393,6 +457,28 @@ public class EntityMinecart : Entity, IMountable
         if (facing == BlockFacing.EAST)  return new Vec3d(1, 0, 0);
         if (facing == BlockFacing.WEST)  return new Vec3d(-1, 0, 0);
         return new Vec3d(0, 0, 1);
+    }
+
+    private bool HasRailAhead(BlockPos railPos, BlockFacing exit)
+    {
+        BlockPos ahead = OffsetPos(railPos, exit);
+
+        // Same level, one up, or one down all count as a valid continuation
+        // to support transitions involving slopes.
+        if (World.BlockAccessor.GetBlock(ahead) is BlockRail) return true;
+        if (World.BlockAccessor.GetBlock(ahead.UpCopy()) is BlockRail) return true;
+        if (World.BlockAccessor.GetBlock(ahead.DownCopy()) is BlockRail) return true;
+
+        return false;
+    }
+
+    private static BlockPos OffsetPos(BlockPos pos, BlockFacing facing)
+    {
+        if (facing == BlockFacing.NORTH) return pos.NorthCopy();
+        if (facing == BlockFacing.SOUTH) return pos.SouthCopy();
+        if (facing == BlockFacing.EAST) return pos.EastCopy();
+        if (facing == BlockFacing.WEST) return pos.WestCopy();
+        return pos.Copy();
     }
 
     private void BurnNextFuel()
