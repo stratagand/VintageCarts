@@ -18,7 +18,7 @@
     "place": "place/stone",
     "break": "break/stone"
   },
-  "collisionbox": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 1.0, "y2": 1.0, "z2": 1.0 },
+  "collisionbox": { "x1": 0.0, "y1": 0.0, "z1": 0.0, "x2": 0.0, "y2": 0.0, "z2": 0.0 },
   "textures": {
     "rail": { "base": "vintagecarts:block/rail" }
   },

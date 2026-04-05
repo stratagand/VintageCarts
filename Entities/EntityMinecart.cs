@@ -19,6 +19,7 @@ public class EntityMinecart : Entity, IMountable
     private const float Acceleration = 3.0f;
     private const float Friction = 2f;
     private const float RiderYOffset = 0.35f;
+    private const double RailVisualTopOffset = 0.125;
 
     private static readonly Dictionary<string, float> FuelValues = new()
     {
@@ -127,7 +128,7 @@ public class EntityMinecart : Entity, IMountable
                     if (blockAtPos is not BlockRail) continue;
 
                     double cx = checkPos.X + 0.5;
-                    double cy = checkPos.Y + 1.0;
+                    double cy = GetRailSurfaceY(blockAtPos, checkPos);
                     double cz = checkPos.Z + 0.5;
                     double dxp = Pos.X - cx;
                     double dyp = Pos.Y - cy;
@@ -148,7 +149,7 @@ public class EntityMinecart : Entity, IMountable
         {
             Block fallbackBlock = World.BlockAccessor.GetBlock(lastRailPos);
             double fx = lastRailPos.X + 0.5;
-            double fy = lastRailPos.Y + 1.0;
+            double fy = GetRailSurfaceY(fallbackBlock, lastRailPos);
             double fz = lastRailPos.Z + 0.5;
             double fdx = Pos.X - fx;
             double fdy = Pos.Y - fy;
@@ -165,7 +166,7 @@ public class EntityMinecart : Entity, IMountable
         if (railBlock != null)
         {
             lastRailPos = railPos!.Copy();
-            double railSurfaceY = railPos!.Y + 1.0;
+            double railSurfaceY = GetRailSurfaceY(railBlock, railPos!);
             if (Math.Abs(Pos.Y - railSurfaceY) > 0.01)
             {
                 Pos.Y = railSurfaceY;
@@ -188,7 +189,7 @@ public class EntityMinecart : Entity, IMountable
                 if (lastRailPos != null)
                 {
                     Pos.X = lastRailPos.X + 0.5;
-                    Pos.Y = lastRailPos.Y + 1.0;
+                    Pos.Y = GetRailSurfaceY(World.BlockAccessor.GetBlock(lastRailPos), lastRailPos);
                     Pos.Z = lastRailPos.Z + 0.5;
                     ServerPos.X = Pos.X;
                     ServerPos.Y = Pos.Y;
@@ -212,10 +213,14 @@ public class EntityMinecart : Entity, IMountable
         bool hasPassenger = _seats[0].Passenger != null;
         bool movingForward  = hasPassenger && _seats[0].Controls.Forward;
         bool movingBackward = hasPassenger && (_seats[0].Controls.Backward || _seats[0].Controls.Sneak || _seats[0].Controls.Jump);
+        bool movingLeft = hasPassenger && _seats[0].Controls.Left;
+        bool movingRight = hasPassenger && _seats[0].Controls.Right;
         bool forwardHasNoEffect = false;
         bool backwardHasNoEffect = false;
+        bool leftHasNoEffect = false;
+        bool rightHasNoEffect = false;
 
-        Api.Logger.Debug($"[Minecart {EntityId}] Passenger: {hasPassenger}, Forward: {movingForward}, Backward: {movingBackward}");
+        Api.Logger.Debug($"[Minecart {EntityId}] Passenger: {hasPassenger}, Forward: {movingForward}, Backward: {movingBackward}, Left: {movingLeft}, Right: {movingRight}");
 
         // Forward uses rider facing: accelerate in the rail direction most aligned with view.
         // If exactly perpendicular to available rail directions, forward has no velocity effect.
@@ -241,6 +246,28 @@ public class EntityMinecart : Entity, IMountable
                 backwardHasNoEffect = true;
             }
         }
+        else if (movingLeft)
+        {
+            if (TryGetLeftFacingDirection(orientation, out BlockFacing facingDirection))
+            {
+                travelDirection = facingDirection;
+            }
+            else
+            {
+                leftHasNoEffect = true;
+            }
+        }
+        else if (movingRight)
+        {
+            if (TryGetRightFacingDirection(orientation, out BlockFacing facingDirection))
+            {
+                travelDirection = facingDirection;
+            }
+            else
+            {
+                rightHasNoEffect = true;
+            }
+        }
         else
         {
             if (travelDirection == null)
@@ -253,6 +280,15 @@ public class EntityMinecart : Entity, IMountable
 
         BlockFacing entry = (travelDirection ?? BlockFacing.SOUTH).Opposite;
         BlockFacing exit = (railBlock as BlockRail)!.GetExitFacing(orientation, entry, switchState, World, railPos);
+
+        // At junctions (multiple possible continuations), let forward input choose the branch
+        // that best matches rider facing.
+        if ((movingForward || movingBackward || movingLeft || movingRight)
+            && TryGetJunctionPreferredExitForInput(railPos, orientation, entry, movingForward, movingBackward, movingLeft, movingRight, out BlockFacing preferredExit))
+        {
+            exit = preferredExit;
+        }
+
         travelDirection = exit;
 
         // Avoid snapping the rider's camera: keep yaw fixed while someone is mounted.
@@ -287,7 +323,15 @@ public class EntityMinecart : Entity, IMountable
         {
             newSpeed = speed;
         }
-        else if (movingForward || movingBackward)
+        else if (movingLeft && leftHasNoEffect)
+        {
+            newSpeed = speed;
+        }
+        else if (movingRight && rightHasNoEffect)
+        {
+            newSpeed = speed;
+        }
+        else if (movingForward || movingBackward || movingLeft || movingRight)
         {
             newSpeed = Math.Min(speed + Acceleration * dt, MaxSpeed);
         }
@@ -366,9 +410,11 @@ public class EntityMinecart : Entity, IMountable
             ServerPos.Motion.Set(targetMotion.X * newSpeed, targetMotion.Y * newSpeed, targetMotion.Z * newSpeed);
         }
 
-        if (orientation is "ns" or "n" or "s")
+        // Snap to the lane implied by actual exit direction so dynamic branch exits
+        // (e.g. leaving an NS run to East/West) can happen within the current tick.
+        if (exit == BlockFacing.NORTH || exit == BlockFacing.SOUTH)
             Pos.X = railPos.X + 0.5;
-        else if (orientation is "ew" or "e" or "w")
+        else if (exit == BlockFacing.EAST || exit == BlockFacing.WEST)
             Pos.Z = railPos.Z + 0.5;
 
         ServerPos.X = Pos.X;
@@ -500,24 +546,32 @@ public class EntityMinecart : Entity, IMountable
 
     private bool TryGetForwardFacingDirection(string orientation, out BlockFacing direction)
     {
-        return TryGetFacingDirectionByLook(orientation, lookSign: 1.0, out direction);
+        return TryGetFacingDirectionByLook(orientation, GetForwardInputLookVector(), out direction);
     }
 
     private bool TryGetBackwardFacingDirection(string orientation, out BlockFacing direction)
     {
-        return TryGetFacingDirectionByLook(orientation, lookSign: -1.0, out direction);
+        return TryGetFacingDirectionByLook(orientation, GetBackwardInputLookVector(), out direction);
     }
 
-    private bool TryGetFacingDirectionByLook(string orientation, double lookSign, out BlockFacing direction)
+    private bool TryGetLeftFacingDirection(string orientation, out BlockFacing direction)
+    {
+        return TryGetFacingDirectionByLook(orientation, GetLeftInputLookVector(), out direction);
+    }
+
+    private bool TryGetRightFacingDirection(string orientation, out BlockFacing direction)
+    {
+        return TryGetFacingDirectionByLook(orientation, GetRightInputLookVector(), out direction);
+    }
+
+    private bool TryGetFacingDirectionByLook(string orientation, Vec3d? lookOpt, out BlockFacing direction)
     {
         direction = BlockFacing.SOUTH;
 
-        if (_seats[0].Passenger is not EntityAgent rider)
+        if (lookOpt == null)
             return false;
 
-        Vec3d look = YawToHorizontalForward(rider.Pos.Yaw);
-        look.X *= lookSign;
-        look.Z *= lookSign;
+        Vec3d look = lookOpt;
 
         var (d1, d2) = BlockRail.GetConnections(orientation);
 
@@ -534,6 +588,128 @@ public class EntityMinecart : Entity, IMountable
         return true;
     }
 
+    private bool TryGetJunctionPreferredExitForInput(BlockPos railPos, string orientation, BlockFacing entry,
+        bool movingForward, bool movingBackward, bool movingLeft, bool movingRight, out BlockFacing direction)
+    {
+        direction = BlockFacing.SOUTH;
+
+        Vec3d? look = movingForward ? GetForwardInputLookVector()
+            : movingBackward ? GetBackwardInputLookVector()
+            : movingLeft ? GetLeftInputLookVector()
+            : movingRight ? GetRightInputLookVector()
+            : null;
+
+        if (look == null) return false;
+        return TryGetJunctionPreferredExit(railPos, orientation, entry, look, out direction);
+    }
+
+    private bool TryGetJunctionPreferredExit(BlockPos railPos, string orientation, BlockFacing entry, Vec3d look, out BlockFacing direction)
+    {
+        direction = BlockFacing.SOUTH;
+
+        List<BlockFacing> options = GetConnectedFacings(orientation);
+        AddPerpendicularNeighborBranches(railPos, orientation, options);
+
+        // Exclude the entry side we came from; we want continuation options.
+        options.Remove(entry);
+
+        // Keep only exits that actually continue to rail blocks.
+        options.RemoveAll(f => !HasRailAhead(railPos, f));
+
+        // Junction behavior only applies when more than one continuation exists.
+        if (options.Count <= 1)
+            return false;
+
+        const double epsilon = 1e-6;
+        double bestDot = double.NegativeInfinity;
+        BlockFacing bestFacing = options[0];
+
+        foreach (BlockFacing option in options)
+        {
+            double dot = DotHorizontal(look, FacingToMotion(option));
+            if (dot > bestDot)
+            {
+                bestDot = dot;
+                bestFacing = option;
+            }
+        }
+
+        // If the player faces perpendicular/backward to all options, keep default routing.
+        if (bestDot <= epsilon)
+            return false;
+
+        direction = bestFacing;
+        return true;
+    }
+
+    private Vec3d? GetForwardInputLookVector()
+    {
+        if (_seats[0].Passenger is not EntityAgent rider) return null;
+        return YawToHorizontalForward(rider.Pos.Yaw);
+    }
+
+    private Vec3d? GetBackwardInputLookVector()
+    {
+        Vec3d? forward = GetForwardInputLookVector();
+        if (forward == null) return null;
+        return new Vec3d(-forward.X, 0, -forward.Z);
+    }
+
+    private Vec3d? GetLeftInputLookVector()
+    {
+        Vec3d? forward = GetForwardInputLookVector();
+        if (forward == null) return null;
+        // Left vector in XZ plane
+        return new Vec3d(forward.Z, 0, -forward.X);
+    }
+
+    private Vec3d? GetRightInputLookVector()
+    {
+        Vec3d? forward = GetForwardInputLookVector();
+        if (forward == null) return null;
+        // Right vector in XZ plane
+        return new Vec3d(-forward.Z, 0, forward.X);
+    }
+
+    private void AddPerpendicularNeighborBranches(BlockPos railPos, string orientation, List<BlockFacing> options)
+    {
+        // Straight tracks can act as ad-hoc junctions if perpendicular neighbors exist.
+        // NS rails may branch to E/W; EW rails may branch to N/S.
+        if (orientation is "ns" or "n" or "s")
+        {
+            if (HasRailAhead(railPos, BlockFacing.EAST) && !options.Contains(BlockFacing.EAST))
+                options.Add(BlockFacing.EAST);
+            if (HasRailAhead(railPos, BlockFacing.WEST) && !options.Contains(BlockFacing.WEST))
+                options.Add(BlockFacing.WEST);
+        }
+        else if (orientation is "ew" or "e" or "w")
+        {
+            if (HasRailAhead(railPos, BlockFacing.NORTH) && !options.Contains(BlockFacing.NORTH))
+                options.Add(BlockFacing.NORTH);
+            if (HasRailAhead(railPos, BlockFacing.SOUTH) && !options.Contains(BlockFacing.SOUTH))
+                options.Add(BlockFacing.SOUTH);
+        }
+    }
+
+    private static List<BlockFacing> GetConnectedFacings(string orientation)
+    {
+        return orientation switch
+        {
+            "ns" or "n" or "s" => new List<BlockFacing> { BlockFacing.NORTH, BlockFacing.SOUTH },
+            "ew" or "e" or "w" => new List<BlockFacing> { BlockFacing.EAST, BlockFacing.WEST },
+            "ne" => new List<BlockFacing> { BlockFacing.NORTH, BlockFacing.EAST },
+            "nw" => new List<BlockFacing> { BlockFacing.NORTH, BlockFacing.WEST },
+            "se" => new List<BlockFacing> { BlockFacing.SOUTH, BlockFacing.EAST },
+            "sw" => new List<BlockFacing> { BlockFacing.SOUTH, BlockFacing.WEST },
+            "t-n" => new List<BlockFacing> { BlockFacing.SOUTH, BlockFacing.EAST, BlockFacing.WEST },
+            "t-s" => new List<BlockFacing> { BlockFacing.NORTH, BlockFacing.EAST, BlockFacing.WEST },
+            "t-e" => new List<BlockFacing> { BlockFacing.NORTH, BlockFacing.SOUTH, BlockFacing.WEST },
+            "t-w" => new List<BlockFacing> { BlockFacing.NORTH, BlockFacing.SOUTH, BlockFacing.EAST },
+            "cross" => new List<BlockFacing> { BlockFacing.NORTH, BlockFacing.SOUTH, BlockFacing.EAST, BlockFacing.WEST },
+            _ => new List<BlockFacing> { BlockFacing.NORTH, BlockFacing.SOUTH }
+        };
+    }
+
     private static Vec3d YawToHorizontalForward(float yaw)
     {
         // VS yaw convention: 0=south(+Z), pi/2=west(-X), pi=north(-Z), 3pi/2=east(+X)
@@ -543,6 +719,15 @@ public class EntityMinecart : Entity, IMountable
     private static double DotHorizontal(Vec3d a, Vec3d b)
     {
         return a.X * b.X + a.Z * b.Z;
+    }
+
+    private double GetRailSurfaceY(Block railBlock, BlockPos railPos)
+    {
+        // Raised main-rail variants (raised_ns / raised_we) visually end one full block higher.
+        if (railBlock.Variant.ContainsKey("type") && railBlock.Variant["type"].StartsWith("raised_"))
+            return railPos.Y + 1.0 + RailVisualTopOffset;
+
+        return railPos.Y + RailVisualTopOffset;
     }
 
     private bool HasRailAhead(BlockPos railPos, BlockFacing exit)

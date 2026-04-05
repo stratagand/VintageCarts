@@ -10,6 +10,8 @@ namespace VintageCarts.Items;
 /// </summary>
 public class ItemMinecart : Item
 {
+	private const double RailVisualTopOffset = 0.125;
+
 	public override void OnHeldInteractStart(ItemSlot itemslot, EntityAgent byEntity,
 		BlockSelection blockSel, EntitySelection entitySel, bool firstEvent,
 		ref EnumHandHandling handling)
@@ -24,10 +26,16 @@ public class ItemMinecart : Item
 		Block targetBlock = byEntity.World.BlockAccessor.GetBlock(blockSel.Position);
 		if (targetBlock is not Blocks.BlockRail) return;
 
-        // Spawn one full block above the rail so gravity settles the cart onto the rail surface.
+		double spawnY = blockSel.Position.Y + RailVisualTopOffset;
+		if (targetBlock.Variant.ContainsKey("type") && targetBlock.Variant["type"].StartsWith("raised_"))
+		{
+			spawnY = blockSel.Position.Y + 1.0 + RailVisualTopOffset;
+		}
+
+		// Spawn directly at the visual rail top for stable initial placement.
         Vec3d spawnPos = new Vec3d(
             blockSel.Position.X + 0.5,
-            blockSel.Position.Y + 1.0,
+			spawnY,
 			blockSel.Position.Z + 0.5);
 
 		EntityProperties? props = byEntity.World.GetEntityType(new AssetLocation("vintagecarts:minecart"));
