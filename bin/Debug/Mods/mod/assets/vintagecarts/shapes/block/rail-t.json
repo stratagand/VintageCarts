@@ -1,6 +1,9 @@
 {
   "textureWidth": 16,
   "textureHeight": 16,
+  "textures": {
+    "rail": "vintagecarts:block/rail"
+  },
   "elements": [
     {
       "name": "south-rail-w",

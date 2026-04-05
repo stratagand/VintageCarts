@@ -205,8 +205,8 @@ public class EntityMinecart : Entity, IMountable
 
     private void HandleRailMovement(Block railBlock, BlockPos railPos, float dt)
     {
-        string orientation = railBlock.Variant.ContainsKey("orientation")
-            ? railBlock.Variant["orientation"] : "ns";
+        // Extract orientation based on block type and variant group
+        string orientation = ExtractRailOrientation(railBlock);
 
         bool isSlope = railBlock.Code.Path.StartsWith("railslope");
 
@@ -427,8 +427,47 @@ public class EntityMinecart : Entity, IMountable
         "ew" or "e" => BlockFacing.EAST,
         "w"         => BlockFacing.WEST,
         "n"         => BlockFacing.NORTH,
-        _           => BlockFacing.SOUTH
+        "se" or "sw" => BlockFacing.SOUTH,
+        "ne" or "nw" => BlockFacing.NORTH,
+        _ => BlockFacing.SOUTH
     };
+
+    private static string ExtractRailOrientation(Block railBlock)
+        {
+            // For slope rails (railslope-*), use "orientation" variant key
+            if (railBlock.Code.Path.StartsWith("railslope"))
+                return railBlock.Variant.ContainsKey("orientation")
+                    ? railBlock.Variant["orientation"] : "ns";
+
+            // For switch rails (railswitch-*), use "orientation" variant key
+            if (railBlock.Code.Path.StartsWith("railswitch"))
+                return railBlock.Variant.ContainsKey("orientation")
+                    ? railBlock.Variant["orientation"] : "ns";
+
+            // For main rails (rail-*), use "type" variant key and extract direction component
+            if (railBlock.Variant.ContainsKey("type"))
+            {
+                string typeValue = railBlock.Variant["type"];
+                // Extract direction from patterns like "curved_es", "flat_ns", "raised_we"
+                int underscore = typeValue.LastIndexOf('_');
+                if (underscore >= 0 && underscore < typeValue.Length - 1)
+                {
+                    string direction = typeValue[(underscore + 1)..];
+                    // Normalize curve orientations to match GetConnections format
+                    // "es" (East-South) → "se", "wn" (West-North) → "nw"
+                    direction = direction switch
+                    {
+                        "es" => "se",
+                        "wn" => "nw",
+                        "we" => "ew",
+                        _ => direction
+                    };
+                    return direction;
+                }
+            }
+
+            return "ns"; // fallback
+        }
 
     // VS entity Yaw: 0 = South (+Z), pi/2 = West, pi = North (-Z), 3pi/2 = East (+X)
     private static float FacingToYaw(BlockFacing facing)

@@ -40,14 +40,15 @@ public class ItemMinecart : Item
 		entity.Pos.Motion.Set(0, 0, 0);
 
 		// Align the cart visually with the rail it's being placed on.
-		string railOrientation = targetBlock.Variant.ContainsKey("orientation")
-			? targetBlock.Variant["orientation"] : "ns";
+		string railOrientation = ExtractRailOrientation(targetBlock);
 		float spawnYaw = railOrientation switch
 		{
 			"ew" or "e" => (float)(Math.PI * 1.5), // East
 			"w"         => (float)(Math.PI * 0.5), // West
 			"n"         => (float)Math.PI,          // North
-			_           => 0f                        // South (ns, s, curves)
+			"we" or "s" => 0f,                       // South (ns, s, ew variants)
+						"se" or "ne" or "nw" or "sw" => 0f,     // Curve variants - default to South
+			_           => 0f                        // Default South
 		};
 		entity.ServerPos.Yaw = spawnYaw;
 		entity.Pos.Yaw = spawnYaw;
@@ -58,5 +59,42 @@ public class ItemMinecart : Item
 		itemslot.TakeOut(1);
 		itemslot.MarkDirty();
 		handling = EnumHandHandling.PreventDefault;
+	}
+
+	private static string ExtractRailOrientation(Block railBlock)
+	{
+		// For slope rails (railslope-*), use "orientation" variant key
+		if (railBlock.Code.Path.StartsWith("railslope"))
+			return railBlock.Variant.ContainsKey("orientation")
+				? railBlock.Variant["orientation"] : "ns";
+
+		// For switch rails (railswitch-*), use "orientation" variant key
+		if (railBlock.Code.Path.StartsWith("railswitch"))
+			return railBlock.Variant.ContainsKey("orientation")
+				? railBlock.Variant["orientation"] : "ns";
+
+		// For main rails (rail-*), use "type" variant key and extract direction component
+		if (railBlock.Variant.ContainsKey("type"))
+		{
+			string typeValue = railBlock.Variant["type"];
+			// Extract direction from patterns like "curved_es", "flat_ns", "raised_we"
+			int underscore = typeValue.LastIndexOf('_');
+			if (underscore >= 0 && underscore < typeValue.Length - 1)
+			{
+				string direction = typeValue[(underscore + 1)..];
+				// Normalize curve orientations to match BlockRail.GetConnections format
+				// "es" (East-South) → "se", "wn" (West-North) → "nw"
+				direction = direction switch
+				{
+					"es" => "se",
+					"wn" => "nw",
+					"we" => "ew",
+					_ => direction
+				};
+				return direction;
+			}
+		}
+
+		return "ns"; // fallback
 	}
 }

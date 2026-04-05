@@ -1,6 +1,13 @@
 {
     "code": "rail",
     "class": "BlockRail",
+    "behaviors": [ {name: "Unstable"} ],
+    "attributes": {
+        "handbook": {
+            "groupBy": ["rail-*"],
+            "exclude": true
+        }
+    },
     "variantgroups": [
         {
             "code": "type",
@@ -21,6 +28,7 @@
     "resistance": 2.0,
     "materialDensity": 7000,
     "blockmaterial": "Wood",
+    "lightAbsorption": 0,
     "sounds": {
         "place": "block/planks",
         "hit": "block/planks",
@@ -97,9 +105,9 @@
             "z2": 1.0
         }
     },
-    "textures:": {
-        "wood": {
-            "base": "block/wood/planks/generic"
+    "textures": {
+        "rail": {
+            "base": "vintagecarts:block/rail"
         }
     },
     "sidesolid": {
@@ -108,30 +116,44 @@
     "sideopaque": {
         "all": false
     },
+    "selectionbox": {
+        "x1": 0,
+        "y1": 0,
+        "z1": 0,
+        "x2": 1,
+        "y2": 0.125,
+        "z2": 1
+    },
     "shapeByType": {
         "*-curved_sw": {
-            "base": "block/wood/rails/curved_es",
-            "rotateY": 270
-        },
-        "*-curved_wn": {
-            "base": "block/wood/rails/curved_es",
+            "base": "vintagecarts:block/rail-curve",
             "rotateY": 180
         },
-        "*-curved_ne": {
-            "base": "block/wood/rails/curved_es",
+        "*-curved_wn": {
+            "base": "vintagecarts:block/rail-curve",
             "rotateY": 90
+        },
+        "*-curved_ne": {
+            "base": "vintagecarts:block/rail-curve"
+        },
+        "*-curved_es": {
+            "base": "vintagecarts:block/rail-curve",
+            "rotateY": 270
         },
         "*-flat_we": {
-            "base": "block/wood/rails/flat_ns",
+            "base": "vintagecarts:block/rail-straight",
             "rotateY": 90
+        },
+        "*-flat_ns": {
+            "base": "vintagecarts:block/rail-straight"
         },
         "*-raised_we": {
-            "base": "block/wood/rails/raised_ns",
+            "base": "vintagecarts:block/rail-slope",
             "rotateY": 90
         },
-        "*": {
-            "base": "block/wood/rails/{type}"
-        },
+        "*-raised_ns": {
+            "base": "vintagecarts:block/rail-slope"
+        }
     },
     "drops": [
         {

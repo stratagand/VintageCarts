@@ -221,8 +221,8 @@ public class BlockRail : Block
 
         // Curves: the other connected facing
         var (f1, f2) = GetConnections(orientation);
-        if (entry.Opposite == f1) return f2;
-        if (entry.Opposite == f2) return f1;
+        if (entry == f1) return f2;
+        if (entry == f2) return f1;
 
         // T junctions / cross – use switch state (stored in BlockEntityRailSwitch)
         return GetTExitFacing(orientation, entry, switchState);
