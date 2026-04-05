@@ -36,7 +36,7 @@ public class EntityMinecart : Entity, IMountable
 
     private BlockFacing? travelDirection = null;
     private BlockPos? lastRailPos = null;
-    private bool _isReversing = false;
+    private bool _isBeingDestroyed = false;
 
     public override void Initialize(EntityProperties properties, ICoreAPI api, long InChunkIndex3d)
     {
@@ -196,7 +196,6 @@ public class EntityMinecart : Entity, IMountable
                 }
             }
             travelDirection = null;
-            _isReversing = false;
             Block blockAt = World.BlockAccessor.GetBlock(entityBlockPos);
             Block blockBelow = World.BlockAccessor.GetBlock(entityBlockPos.DownCopy());
             Api.Logger.Debug($"[Minecart {EntityId}] Not on rail. Block at entity: {blockAt.Code}, Block below: {blockBelow.Code}");
@@ -213,38 +212,33 @@ public class EntityMinecart : Entity, IMountable
         bool hasPassenger = _seats[0].Passenger != null;
         bool movingForward  = hasPassenger && _seats[0].Controls.Forward;
         bool movingBackward = hasPassenger && (_seats[0].Controls.Backward || _seats[0].Controls.Sneak || _seats[0].Controls.Jump);
+        bool forwardHasNoEffect = false;
+        bool backwardHasNoEffect = false;
 
         Api.Logger.Debug($"[Minecart {EntityId}] Passenger: {hasPassenger}, Forward: {movingForward}, Backward: {movingBackward}");
 
-        // _isReversing tracks the player's last directional intent.
-        // Direction flips ONLY when the player switches between W and S —
-        // re-pressing the same key after coasting continues in the same direction.
+        // Forward uses rider facing: accelerate in the rail direction most aligned with view.
+        // If exactly perpendicular to available rail directions, forward has no velocity effect.
         if (movingForward)
         {
-            if (_isReversing)
+            if (TryGetForwardFacingDirection(orientation, out BlockFacing facingDirection))
             {
-                travelDirection = (travelDirection ?? DefaultFacingForOrientation(orientation)).Opposite;
-                Pos.Motion.Set(0, 0, 0);
-                ServerPos.Motion.Set(0, 0, 0);
-                _isReversing = false;
+                travelDirection = facingDirection;
             }
-            else if (travelDirection == null || GetSpeed() < 0.05f)
+            else
             {
-                travelDirection = DefaultFacingForOrientation(orientation);
+                forwardHasNoEffect = true;
             }
         }
         else if (movingBackward)
         {
-            if (!_isReversing)
+            if (TryGetBackwardFacingDirection(orientation, out BlockFacing facingDirection))
             {
-                travelDirection = (travelDirection ?? DefaultFacingForOrientation(orientation)).Opposite;
-                Pos.Motion.Set(0, 0, 0);
-                ServerPos.Motion.Set(0, 0, 0);
-                _isReversing = true;
+                travelDirection = facingDirection;
             }
-            else if (travelDirection == null)
+            else
             {
-                travelDirection = DefaultFacingForOrientation(orientation).Opposite;
+                backwardHasNoEffect = true;
             }
         }
         else
@@ -285,7 +279,15 @@ public class EntityMinecart : Entity, IMountable
         float speed = (float)GetSpeed();
         float newSpeed;
 
-        if (movingForward || movingBackward)
+        if (movingForward && forwardHasNoEffect)
+        {
+            newSpeed = speed;
+        }
+        else if (movingBackward && backwardHasNoEffect)
+        {
+            newSpeed = speed;
+        }
+        else if (movingForward || movingBackward)
         {
             newSpeed = Math.Min(speed + Acceleration * dt, MaxSpeed);
         }
@@ -295,7 +297,6 @@ public class EntityMinecart : Entity, IMountable
             if (newSpeed < 0.01f)
             {
                 newSpeed = 0;
-                _isReversing = false;
                 if (!hasPassenger) travelDirection = null;
             }
         }
@@ -356,7 +357,6 @@ public class EntityMinecart : Entity, IMountable
         {
             newSpeed = 0;
             travelDirection = null;
-            _isReversing = false;
             Pos.Motion.Set(0, 0, 0);
             ServerPos.Motion.Set(0, 0, 0);
         }
@@ -498,6 +498,53 @@ public class EntityMinecart : Entity, IMountable
         return new Vec3d(0, 0, 1);
     }
 
+    private bool TryGetForwardFacingDirection(string orientation, out BlockFacing direction)
+    {
+        return TryGetFacingDirectionByLook(orientation, lookSign: 1.0, out direction);
+    }
+
+    private bool TryGetBackwardFacingDirection(string orientation, out BlockFacing direction)
+    {
+        return TryGetFacingDirectionByLook(orientation, lookSign: -1.0, out direction);
+    }
+
+    private bool TryGetFacingDirectionByLook(string orientation, double lookSign, out BlockFacing direction)
+    {
+        direction = BlockFacing.SOUTH;
+
+        if (_seats[0].Passenger is not EntityAgent rider)
+            return false;
+
+        Vec3d look = YawToHorizontalForward(rider.Pos.Yaw);
+        look.X *= lookSign;
+        look.Z *= lookSign;
+
+        var (d1, d2) = BlockRail.GetConnections(orientation);
+
+        double dot1 = DotHorizontal(look, FacingToMotion(d1));
+        double dot2 = DotHorizontal(look, FacingToMotion(d2));
+
+        // Exactly perpendicular to both candidate rail directions: no influence.
+        const double epsilon = 1e-6;
+        double bestDot = Math.Max(dot1, dot2);
+        if (bestDot <= epsilon)
+            return false;
+
+        direction = dot1 >= dot2 ? d1 : d2;
+        return true;
+    }
+
+    private static Vec3d YawToHorizontalForward(float yaw)
+    {
+        // VS yaw convention: 0=south(+Z), pi/2=west(-X), pi=north(-Z), 3pi/2=east(+X)
+        return new Vec3d(Math.Sin(yaw), 0, Math.Cos(yaw));
+    }
+
+    private static double DotHorizontal(Vec3d a, Vec3d b)
+    {
+        return a.X * b.X + a.Z * b.Z;
+    }
+
     private bool HasRailAhead(BlockPos railPos, BlockFacing exit)
     {
         BlockPos ahead = OffsetPos(railPos, exit);
@@ -543,8 +590,15 @@ public class EntityMinecart : Entity, IMountable
 
     public override void OnInteract(EntityAgent byEntity, ItemSlot slot, Vec3d hitPosition, EnumInteractMode mode)
     {
-        if (mode != EnumInteractMode.Interact) return;
         if (Api.Side != EnumAppSide.Server) return;
+
+        if (mode == EnumInteractMode.Attack)
+        {
+            DestroyAndDropMinecart(byEntity);
+            return;
+        }
+
+        if (mode != EnumInteractMode.Interact) return;
         if (byEntity is not EntityPlayer entityPlayer) return;
         IServerPlayer player = (IServerPlayer)entityPlayer.Player;
 
@@ -560,6 +614,25 @@ public class EntityMinecart : Entity, IMountable
             byEntity.TryMount(_seats[0]);
         else if (_seats[0].Passenger == byEntity)
             byEntity.TryUnmount();
+    }
+
+    private void DestroyAndDropMinecart(EntityAgent byEntity)
+    {
+        if (_isBeingDestroyed) return;
+        _isBeingDestroyed = true;
+
+        // Ensure rider is unmounted before despawn so controls don't stick.
+        if (_seats?[0].Passenger != null)
+            (_seats[0].Passenger as EntityAgent)?.TryUnmount();
+
+        Item? minecartItem = World.GetItem(new AssetLocation("vintagecarts:minecart"));
+        if (minecartItem != null)
+        {
+            World.SpawnItemEntity(new ItemStack(minecartItem, 1), Pos.XYZ);
+        }
+
+        // Use Removed to avoid engine death-drop duplication; we already spawned 1 item above.
+        Die(EnumDespawnReason.Removed, null);
     }
 
     public override void ToBytes(BinaryWriter writer, bool forClient)

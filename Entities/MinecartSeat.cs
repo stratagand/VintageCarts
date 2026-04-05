@@ -41,7 +41,7 @@ public class MinecartSeat : IMountableSeat
             APName      = "seatpoint",
             SelectionBox = "seatpoint",
             Controllable = true,
-            AngleMode   = EnumMountAngleMode.FixateYaw,
+            AngleMode   = EnumMountAngleMode.PushYaw,
             EyeHeight   = 1.0f,
             Animation   = "sit",
         };
@@ -60,7 +60,7 @@ public class MinecartSeat : IMountableSeat
     public IMountable MountSupplier => _cart;
 
     public bool CanControl => true;
-    public EnumMountAngleMode AngleMode => EnumMountAngleMode.FixateYaw;
+    public EnumMountAngleMode AngleMode => EnumMountAngleMode.PushYaw;
     public AnimationMetaData? SuggestedAnimation => null;
     public bool SkipIdleAnimation => false;
     public float FpHandPitchFollow => 0f;
