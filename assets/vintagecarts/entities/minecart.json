@@ -28,8 +28,7 @@
       {
         "code": "passivephysics",
         "groundDragFactor": 0,
-        "airDragFactor": 0,
-        "gravityFactor": 0
+        "airDragFactor": 0
       },
       { "code": "health", "currenthealth": 20, "maxhealth": 20 }
     ]

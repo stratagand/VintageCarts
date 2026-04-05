@@ -13,18 +13,12 @@ using VintageCarts.Network;
 
 namespace VintageCarts.Entities;
 
-/// <summary>
-/// Rideable, fuel-powered minecart entity.
-/// Follows rail tracks, consumes fuel items, and exposes a fuel inventory GUI.
-/// </summary>
 public class EntityMinecart : Entity, IMountable
 {
-    // ── Constants ─────────────────────────────────────────────────────────
-
-    private const float MaxSpeed = 5f;          // m/s along the rail
-    private const float Acceleration = 1.5f;    // m/s² while fuelled
-    private const float Friction = 2f;           // m/s² deceleration when off-rail or unfuelled
-    private const float RiderYOffset = 0.35f;   // seat height above entity origin
+    private const float MaxSpeed = 5f;
+    private const float Acceleration = 1.5f;
+    private const float Friction = 2f;
+    private const float RiderYOffset = 0.35f;
 
     private static readonly Dictionary<string, float> FuelValues = new()
     {
@@ -35,31 +29,24 @@ public class EntityMinecart : Entity, IMountable
         { "game:charcoal",    80f  },
     };
 
-    // ── IMountable seat ────────────────────────────────────────────────────
-
     private MinecartSeat[] _seats = null!;
-
-    // ── State ──────────────────────────────────────────────────────────────
 
     private InventoryGeneric fuelInventory = null!;
     private float fuelSecondsRemaining = 0f;
 
-    // Direction the cart is travelling (used to pick exit at junctions)
     private BlockFacing? travelDirection = null;
-
-    // ── Initialization ─────────────────────────────────────────────────────
+    private BlockPos? lastRailPos = null;
+    private bool _isReversing = false;
 
     public override void Initialize(EntityProperties properties, ICoreAPI api, long InChunkIndex3d)
     {
         base.Initialize(properties, api, InChunkIndex3d);
-
         _seats = new[] { new MinecartSeat(this) };
-
         fuelInventory = new InventoryGeneric(1, "vintagecarts-fuel-" + EntityId, api);
         fuelInventory.SlotModified += _ => { };
+        Pos.Motion.Set(0, 0, 0);
+        ServerPos.Motion.Set(0, 0, 0);
     }
-
-    // ── IMountable ─────────────────────────────────────────────────────────
 
     public IMountableSeat[] Seats => _seats;
     public EntityPos Position => Pos;
@@ -69,7 +56,6 @@ public class EntityMinecart : Entity, IMountable
     public Entity OnEntity => this;
     public EntityControls ControllingControls => _seats[0].Controls;
 
-    /// <summary>Factory delegate registered with api.RegisterMountable.</summary>
     public static IMountableSeat? GetMountable(IWorldAccessor world, TreeAttribute tree)
     {
         long entityId = tree.GetLong("entityId");
@@ -82,15 +68,12 @@ public class EntityMinecart : Entity, IMountable
         return null;
     }
 
-    // ── Fuel inventory (accessible for GUI) ───────────────────────────────
-
     public ItemSlot FuelSlot => fuelInventory[0];
-
     public float FuelSecondsRemaining => fuelSecondsRemaining;
 
     public void HandleFuelSlotPacket(IServerPlayer fromPlayer, FuelSlotChangedPacket packet)
     {
-        if (packet.Action == 0) // take fuel out
+        if (packet.Action == 0)
         {
             if (fuelInventory[0].Itemstack != null)
             {
@@ -100,7 +83,7 @@ public class EntityMinecart : Entity, IMountable
                 fuelInventory[0].MarkDirty();
             }
         }
-        else if (packet.Action == 1) // put held item into fuel slot
+        else if (packet.Action == 1)
         {
             ItemSlot held = fromPlayer.InventoryManager.ActiveHotbarSlot;
             if (held?.Itemstack != null && GetFuelValue(held.Itemstack) > 0)
@@ -118,94 +101,172 @@ public class EntityMinecart : Entity, IMountable
         }
     }
 
-    // ── Game Tick ──────────────────────────────────────────────────────────
-
-    private (Block? rail, BlockPos? pos) FindRailUnder()
-    {
-        // Check current block, one below, and two below to handle edge-of-block Y positions.
-        BlockPos p = Pos.AsBlockPos;
-        for (int dy = 0; dy <= 2; dy++)
-        {
-            BlockPos check = dy == 0 ? p : p.DownCopy(dy);
-            Block b = World.BlockAccessor.GetBlock(check);
-            if (b is BlockRail) return (b, check);
-        }
-        return (null, null);
-    }
-
     public override void OnGameTick(float dt)
     {
-        if (Api.Side == EnumAppSide.Server)
+        base.OnGameTick(dt);
+        if (Api.Side != EnumAppSide.Server) return;
+
+        BlockPos entityBlockPos = Pos.AsBlockPos;
+
+        Block? railBlock = null;
+        BlockPos? railPos = null;
+        double bestDistSq = double.MaxValue;
+
+        for (int yOffset = 0; yOffset >= -5; yOffset--)
         {
-            // PRE-PHYSICS: if on a flat rail, zero any downward motion so passivephysics
-            // cannot pull the cart into the rail block during its integration step.
-            var (preRail, preRailPos) = FindRailUnder();
-            if (preRail != null && !preRail.Code.Path.StartsWith("railslope"))
+            for (int dx = -2; dx <= 2; dx++)
             {
-                if (Pos.Motion.Y < 0) Pos.Motion.Y = 0;
-                if (ServerPos.Motion.Y < 0) ServerPos.Motion.Y = 0;
-                // Also pin Y before physics so passivephysics starts from the correct position.
-                double railTop = preRailPos!.Y + 0.125;
-                Pos.Y = railTop;
-                ServerPos.Y = railTop;
+                for (int dz = -2; dz <= 2; dz++)
+                {
+                    BlockPos checkPos = entityBlockPos.Copy();
+                    checkPos.Y += yOffset;
+                    checkPos.X += dx;
+                    checkPos.Z += dz;
+
+                    Block blockAtPos = World.BlockAccessor.GetBlock(checkPos);
+                    if (blockAtPos is not BlockRail) continue;
+
+                    double cx = checkPos.X + 0.5;
+                    double cy = checkPos.Y + 1.0;
+                    double cz = checkPos.Z + 0.5;
+                    double dxp = Pos.X - cx;
+                    double dyp = Pos.Y - cy;
+                    double dzp = Pos.Z - cz;
+                    double distSq = dxp * dxp + dyp * dyp + dzp * dzp;
+
+                    if (distSq < bestDistSq)
+                    {
+                        bestDistSq = distSq;
+                        railBlock = blockAtPos;
+                        railPos = checkPos;
+                    }
+                }
             }
         }
 
-        base.OnGameTick(dt);
+        if (railBlock == null && lastRailPos != null)
+        {
+            Block fallbackBlock = World.BlockAccessor.GetBlock(lastRailPos);
+            double fx = lastRailPos.X + 0.5;
+            double fy = lastRailPos.Y + 1.0;
+            double fz = lastRailPos.Z + 0.5;
+            double fdx = Pos.X - fx;
+            double fdy = Pos.Y - fy;
+            double fdz = Pos.Z - fz;
+            double fallbackDistSq = fdx * fdx + fdy * fdy + fdz * fdz;
 
-        if (Api.Side != EnumAppSide.Server) return;
-
-        // POST-PHYSICS: re-detect and snap again (belt-and-braces).
-        var (railBlock, railPos) = FindRailUnder();
+            if (fallbackBlock is BlockRail && fallbackDistSq < 9)
+            {
+                railBlock = fallbackBlock;
+                railPos = lastRailPos.Copy();
+            }
+        }
 
         if (railBlock != null)
         {
+            lastRailPos = railPos!.Copy();
+            double railSurfaceY = railPos!.Y + 1.0;
+            if (Math.Abs(Pos.Y - railSurfaceY) > 0.01)
+            {
+                Pos.Y = railSurfaceY;
+                ServerPos.Y = railSurfaceY;
+            }
+
+            if (!railBlock.Code.Path.StartsWith("railslope"))
+            {
+                Pos.Motion.Y = 0;
+                ServerPos.Motion.Y = 0;
+            }
             HandleRailMovement(railBlock, railPos!, dt);
         }
         else
         {
-            // Apply gravity manually (passivephysics gravity is disabled on this entity).
-            Pos.Motion.Y = Math.Max(Pos.Motion.Y - 0.04f * dt * 20f, -0.5f);
-            ApplyFriction(dt);
+            if (GetSpeed() > 0.001f)
+            {
+                Pos.Motion.Set(0, 0, 0);
+                ServerPos.Motion.Set(0, 0, 0);
+                if (lastRailPos != null)
+                {
+                    Pos.X = lastRailPos.X + 0.5;
+                    Pos.Y = lastRailPos.Y + 1.0;
+                    Pos.Z = lastRailPos.Z + 0.5;
+                    ServerPos.X = Pos.X;
+                    ServerPos.Y = Pos.Y;
+                    ServerPos.Z = Pos.Z;
+                }
+            }
+            travelDirection = null;
+            _isReversing = false;
+            Block blockAt = World.BlockAccessor.GetBlock(entityBlockPos);
+            Block blockBelow = World.BlockAccessor.GetBlock(entityBlockPos.DownCopy());
+            Api.Logger.Debug($"[Minecart {EntityId}] Not on rail. Block at entity: {blockAt.Code}, Block below: {blockBelow.Code}");
         }
     }
 
     private void HandleRailMovement(Block railBlock, BlockPos railPos, float dt)
     {
         string orientation = railBlock.Variant.ContainsKey("orientation")
-            ? railBlock.Variant["orientation"]
-            : "ns";
+            ? railBlock.Variant["orientation"] : "ns";
 
         bool isSlope = railBlock.Code.Path.StartsWith("railslope");
 
-        // Pin the cart to the top of flat rails every tick (gravity is disabled, so this is authoritative).
-        if (!isSlope)
+        bool hasPassenger = _seats[0].Passenger != null;
+        bool movingForward  = hasPassenger && _seats[0].Controls.Forward;
+        bool movingBackward = hasPassenger && (_seats[0].Controls.Backward || _seats[0].Controls.Sneak || _seats[0].Controls.Jump);
+
+        Api.Logger.Debug($"[Minecart {EntityId}] Passenger: {hasPassenger}, Forward: {movingForward}, Backward: {movingBackward}");
+
+        // _isReversing tracks the player's last directional intent.
+        // Direction flips ONLY when the player switches between W and S —
+        // re-pressing the same key after coasting continues in the same direction.
+        if (movingForward)
         {
-            double railTopY = railPos.Y + 0.125;
-            Pos.Y = railTopY;
-            ServerPos.Y = railTopY;
-            Pos.Motion.Y = 0;
-            ServerPos.Motion.Y = 0;
+            if (_isReversing)
+            {
+                travelDirection = (travelDirection ?? DefaultFacingForOrientation(orientation)).Opposite;
+                Pos.Motion.Set(0, 0, 0);
+                ServerPos.Motion.Set(0, 0, 0);
+                _isReversing = false;
+            }
+            else if (travelDirection == null || GetSpeed() < 0.05f)
+            {
+                travelDirection = DefaultFacingForOrientation(orientation);
+            }
+        }
+        else if (movingBackward)
+        {
+            if (!_isReversing)
+            {
+                travelDirection = (travelDirection ?? DefaultFacingForOrientation(orientation)).Opposite;
+                Pos.Motion.Set(0, 0, 0);
+                ServerPos.Motion.Set(0, 0, 0);
+                _isReversing = true;
+            }
+            else if (travelDirection == null)
+            {
+                travelDirection = DefaultFacingForOrientation(orientation).Opposite;
+            }
+        }
+        else
+        {
+            if (travelDirection == null)
+                travelDirection = DefaultFacingForOrientation(orientation);
         }
 
-        // Determine current travel direction from velocity
-        if (travelDirection == null || GetSpeed() < 0.05f)
-            travelDirection = DominantFacing();
-
-        // Get switch state if this is a junction
         int switchState = 0;
         var be = World.BlockAccessor.GetBlockEntity(railPos) as BlockEntityRailSwitch;
         if (be != null) switchState = be.SwitchState;
 
-        // Determine exit facing
-        BlockFacing entry = travelDirection ?? BlockFacing.SOUTH;
+        BlockFacing entry = (travelDirection ?? BlockFacing.SOUTH).Opposite;
         BlockFacing exit = (railBlock as BlockRail)!.GetExitFacing(orientation, entry, switchState, World, railPos);
         travelDirection = exit;
 
-        // Build target velocity vector
+        // Align cart visually with travel direction.
+        Pos.Yaw = FacingToYaw(exit);
+        ServerPos.Yaw = Pos.Yaw;
+
         Vec3d targetMotion = FacingToMotion(exit);
 
-        // Y component for slopes
         if (isSlope)
         {
             bool ascending = orientation == "n" && exit == BlockFacing.NORTH
@@ -213,32 +274,66 @@ public class EntityMinecart : Entity, IMountable
                           || orientation == "e" && exit == BlockFacing.EAST
                           || orientation == "w" && exit == BlockFacing.WEST;
             targetMotion.Y = ascending ? 0.5 : -0.5;
-            // Normalize to keep total speed reasonable
-            double len = Math.Sqrt(targetMotion.X * targetMotion.X + 1.0 * 0.25 + targetMotion.Z * targetMotion.Z);
+            double len = Math.Sqrt(targetMotion.X * targetMotion.X + 0.25 + targetMotion.Z * targetMotion.Z);
             if (len > 0) { targetMotion.X /= len; targetMotion.Z /= len; targetMotion.Y /= len; }
         }
 
-        // Burn fuel and accelerate or decelerate
-        if (fuelSecondsRemaining > 0)
-        {
-            fuelSecondsRemaining -= dt;
-            if (fuelSecondsRemaining <= 0)
-            {
-                fuelSecondsRemaining = 0;
-                BurnNextFuel();
-            }
+        float speed = (float)GetSpeed();
+        float newSpeed;
 
-            float speed = (float)GetSpeed();
-            float newSpeed = Math.Min(speed + Acceleration * dt, MaxSpeed);
-            Pos.Motion.Set(targetMotion.X * newSpeed, targetMotion.Y * newSpeed, targetMotion.Z * newSpeed);
+        if (movingForward || movingBackward)
+        {
+            newSpeed = Math.Min(speed + Acceleration * dt, MaxSpeed);
         }
         else
         {
-            // Coast to stop, still staying on rail direction
-            float speed = (float)GetSpeed();
-            float newSpeed = Math.Max(0, speed - Friction * dt);
-            Pos.Motion.Set(targetMotion.X * newSpeed, targetMotion.Y * newSpeed, targetMotion.Z * newSpeed);
+            newSpeed = Math.Max(0, speed - Friction * dt);
+            if (newSpeed < 0.01f)
+            {
+                newSpeed = 0;
+                _isReversing = false;
+                if (!hasPassenger) travelDirection = null;
+            }
         }
+
+        Pos.Motion.Set(targetMotion.X * newSpeed, targetMotion.Y * newSpeed, targetMotion.Z * newSpeed);
+        ServerPos.Motion.Set(targetMotion.X * newSpeed, targetMotion.Y * newSpeed, targetMotion.Z * newSpeed);
+
+        Pos.X += targetMotion.X * newSpeed * dt;
+        Pos.Z += targetMotion.Z * newSpeed * dt;
+
+        if (orientation is "ns" or "n" or "s")
+            Pos.X = railPos.X + 0.5;
+        else if (orientation is "ew" or "e" or "w")
+            Pos.Z = railPos.Z + 0.5;
+
+        ServerPos.X = Pos.X;
+        ServerPos.Y = Pos.Y;
+        ServerPos.Z = Pos.Z;
+
+        if (_seats[0].Passenger is EntityPlayer riderPlayer && Api is ICoreServerAPI sapi)
+        {
+            sapi.Network.GetChannel(VintageCartsModSystem.ChannelName)
+                .SendPacket(new CartPositionPacket
+                {
+                    EntityId = EntityId,
+                    X = Pos.X, Y = Pos.Y, Z = Pos.Z,
+                    MotionX = Pos.Motion.X, MotionZ = Pos.Motion.Z,
+                    Yaw = Pos.Yaw
+                }, (IServerPlayer)riderPlayer.Player);
+        }
+
+        Api.Logger.Debug($"[Minecart {EntityId}] Speed: {newSpeed:F2}, Motion: ({Pos.Motion.X:F3}, {Pos.Motion.Y:F3}, {Pos.Motion.Z:F3}), Pos: ({Pos.X:F2},{Pos.Y:F2},{Pos.Z:F2})");
+    }
+
+    public void ApplyClientPositionUpdate(double x, double y, double z, double mx, double mz, float yaw = 0)
+    {
+        Pos.X = x; Pos.Y = y; Pos.Z = z;
+        ServerPos.X = x; ServerPos.Y = y; ServerPos.Z = z;
+        Pos.Motion.X = mx; Pos.Motion.Z = mz;
+        ServerPos.Motion.X = mx; ServerPos.Motion.Z = mz;
+        Pos.Yaw = yaw;
+        ServerPos.Yaw = yaw;
     }
 
     private void ApplyFriction(float dt)
@@ -250,8 +345,11 @@ public class EntityMinecart : Entity, IMountable
             double scale = newSpeed / speed;
             Pos.Motion.X *= scale;
             Pos.Motion.Z *= scale;
+            ServerPos.Motion.X *= scale;
+            ServerPos.Motion.Z *= scale;
         }
-        Pos.Motion.Y = Math.Max(Pos.Motion.Y, -20); // gravity already applied by physics behavior
+        Pos.Motion.Y = Math.Max(Pos.Motion.Y, -20);
+        ServerPos.Motion.Y = Math.Max(ServerPos.Motion.Y, -20);
     }
 
     private double GetSpeed()
@@ -260,13 +358,28 @@ public class EntityMinecart : Entity, IMountable
         return Math.Sqrt(mx * mx + mz * mz);
     }
 
+    private static BlockFacing DefaultFacingForOrientation(string orientation) => orientation switch
+    {
+        "ew" or "e" => BlockFacing.EAST,
+        "w"         => BlockFacing.WEST,
+        "n"         => BlockFacing.NORTH,
+        _           => BlockFacing.SOUTH
+    };
+
+    // VS entity Yaw: 0 = South (+Z), pi/2 = West, pi = North (-Z), 3pi/2 = East (+X)
+    private static float FacingToYaw(BlockFacing facing)
+    {
+        if (facing == BlockFacing.NORTH) return (float)Math.PI;
+        if (facing == BlockFacing.WEST)  return (float)(Math.PI * 0.5);
+        if (facing == BlockFacing.EAST)  return (float)(Math.PI * 1.5);
+        return 0f; // SOUTH
+    }
+
     private BlockFacing DominantFacing()
     {
         double ax = Math.Abs(Pos.Motion.X);
         double az = Math.Abs(Pos.Motion.Z);
-
-        if (ax < 0.001 && az < 0.001) return BlockFacing.SOUTH; // default
-
+        if (ax < 0.001 && az < 0.001) return BlockFacing.SOUTH;
         if (ax > az)
             return Pos.Motion.X > 0 ? BlockFacing.EAST : BlockFacing.WEST;
         else
@@ -276,8 +389,8 @@ public class EntityMinecart : Entity, IMountable
     private static Vec3d FacingToMotion(BlockFacing facing)
     {
         if (facing == BlockFacing.NORTH) return new Vec3d(0, 0, -1);
-        if (facing == BlockFacing.SOUTH) return new Vec3d(0, 0,  1);
-        if (facing == BlockFacing.EAST)  return new Vec3d( 1, 0, 0);
+        if (facing == BlockFacing.SOUTH) return new Vec3d(0, 0, 1);
+        if (facing == BlockFacing.EAST)  return new Vec3d(1, 0, 0);
         if (facing == BlockFacing.WEST)  return new Vec3d(-1, 0, 0);
         return new Vec3d(0, 0, 1);
     }
@@ -286,10 +399,8 @@ public class EntityMinecart : Entity, IMountable
     {
         ItemStack? stack = fuelInventory[0].Itemstack;
         if (stack == null) return;
-
         float value = GetFuelValue(stack);
         if (value <= 0) return;
-
         fuelSecondsRemaining = value;
         stack.StackSize--;
         if (stack.StackSize <= 0) fuelInventory[0].Itemstack = null;
@@ -298,47 +409,33 @@ public class EntityMinecart : Entity, IMountable
 
     private static float GetFuelValue(ItemStack stack)
     {
-        string code = stack.Collectible.Code.ToShortString();
+        string code = stack.Collectible.Code.ToString();
         if (FuelValues.TryGetValue(code, out float val)) return val;
-
-        // Check by first part (e.g. any firewood variant)
         foreach (var kv in FuelValues)
             if (code.StartsWith(kv.Key.Split(':')[1])) return kv.Value;
-
         return 0;
     }
-
-    // ── Interaction ────────────────────────────────────────────────────────
 
     public override void OnInteract(EntityAgent byEntity, ItemSlot slot, Vec3d hitPosition, EnumInteractMode mode)
     {
         if (mode != EnumInteractMode.Interact) return;
         if (Api.Side != EnumAppSide.Server) return;
-
         if (byEntity is not EntityPlayer entityPlayer) return;
         IServerPlayer player = (IServerPlayer)entityPlayer.Player;
 
         if (byEntity.Controls.Sneak)
         {
-            // Open fuel GUI
             (Api as ICoreServerAPI)!.Network
                 .GetChannel(VintageCartsModSystem.ChannelName)
                 .SendPacket(new OpenFuelGuiPacket { EntityId = EntityId }, player);
             return;
         }
 
-        // Mount / dismount
         if (_seats[0].Passenger == null)
-        {
             byEntity.TryMount(_seats[0]);
-        }
         else if (_seats[0].Passenger == byEntity)
-        {
             byEntity.TryUnmount();
-        }
     }
-
-    // ── Serialization ──────────────────────────────────────────────────────
 
     public override void ToBytes(BinaryWriter writer, bool forClient)
     {
@@ -359,22 +456,18 @@ public class EntityMinecart : Entity, IMountable
             tree.FromBytes(reader);
             fuelInventory?.FromTreeAttributes(tree);
         }
-        catch { /* tolerate empty/missing data on first spawn */ }
+        catch { }
     }
 
     public override void OnEntityDespawn(EntityDespawnData despawn)
     {
-        // Drop remaining fuel
         if (Api.Side == EnumAppSide.Server && fuelInventory[0].Itemstack != null)
         {
             World.SpawnItemEntity(fuelInventory[0].Itemstack, Pos.XYZ);
             fuelInventory[0].Itemstack = null;
         }
-
-        // Unmount any rider
         if (_seats?[0].Passenger != null)
             (_seats[0].Passenger as EntityAgent)?.TryUnmount();
-
         base.OnEntityDespawn(despawn);
     }
 }

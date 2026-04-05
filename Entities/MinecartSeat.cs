@@ -13,7 +13,24 @@ public class MinecartSeat : IMountableSeat
 {
     private readonly EntityMinecart _cart;
     private Entity? _passenger;
-    private readonly EntityControls _controls = new EntityControls();
+
+    private Entity? ResolvePassenger()
+    {
+        if (_passenger != null && _passenger.Alive) return _passenger;
+
+        if (PassengerEntityIdForInit > 0)
+        {
+            Entity? entity = _cart.World?.GetEntityById(PassengerEntityIdForInit);
+            if (entity != null && entity.Alive)
+            {
+                _passenger = entity;
+                return _passenger;
+            }
+        }
+
+        _passenger = null;
+        return null;
+    }
 
     public MinecartSeat(EntityMinecart cart)
     {
@@ -39,7 +56,7 @@ public class MinecartSeat : IMountableSeat
     public bool DoTeleportOnUnmount { get; set; } = true;
 
     public Entity Entity   => _cart;
-    public Entity? Passenger => _passenger;
+    public Entity? Passenger => ResolvePassenger();
     public IMountable MountSupplier => _cart;
 
     public bool CanControl => true;
@@ -62,21 +79,27 @@ public class MinecartSeat : IMountableSeat
 
     public Matrixf RenderTransform => null!;
 
-    public EntityControls Controls => _controls;
+    public EntityControls Controls => (Passenger as EntityAgent)?.Controls ?? new EntityControls();
 
     // ── Mount / Unmount ────────────────────────────────────────────────────
 
     public bool CanMount(EntityAgent entityAgent)
-        => _passenger == null && _cart.Alive;
+        => Passenger == null && _cart.Alive;
 
     public bool CanUnmount(EntityAgent entityAgent)
-        => _passenger == entityAgent;
+        => Passenger == entityAgent;
 
     public void DidMount(EntityAgent entityAgent)
-        => _passenger = entityAgent;
+    {
+        _passenger = entityAgent;
+        PassengerEntityIdForInit = entityAgent.EntityId;
+    }
 
     public void DidUnmount(EntityAgent entityAgent)
-        => _passenger = null;
+    {
+        if (_passenger == entityAgent) _passenger = null;
+        PassengerEntityIdForInit = 0;
+    }
 
     // ── Persistence ────────────────────────────────────────────────────────
 

@@ -31,6 +31,7 @@ public class VintageCartsModSystem : ModSystem
             .RegisterChannel(ChannelName)
             .RegisterMessageType<OpenFuelGuiPacket>()
             .RegisterMessageType<FuelSlotChangedPacket>()
+            .RegisterMessageType<CartPositionPacket>()
             .SetMessageHandler<FuelSlotChangedPacket>(OnClientFuelSlotChanged);
     }
 
@@ -40,7 +41,9 @@ public class VintageCartsModSystem : ModSystem
             .RegisterChannel(ChannelName)
             .RegisterMessageType<OpenFuelGuiPacket>()
             .RegisterMessageType<FuelSlotChangedPacket>()
-            .SetMessageHandler<OpenFuelGuiPacket>(packet => OnOpenFuelGui(api, packet));
+            .RegisterMessageType<CartPositionPacket>()
+            .SetMessageHandler<OpenFuelGuiPacket>(packet => OnOpenFuelGui(api, packet))
+            .SetMessageHandler<CartPositionPacket>(packet => OnCartPositionUpdate(api, packet));
     }
 
     private void OnOpenFuelGui(ICoreClientAPI api, OpenFuelGuiPacket packet)
@@ -55,5 +58,11 @@ public class VintageCartsModSystem : ModSystem
     {
         var entity = fromPlayer.Entity?.World.GetEntityById(packet.EntityId) as EntityMinecart;
         entity?.HandleFuelSlotPacket(fromPlayer, packet);
+    }
+
+    private void OnCartPositionUpdate(ICoreClientAPI api, CartPositionPacket packet)
+    {
+        if (api.World.GetEntityById(packet.EntityId) is EntityMinecart cart)
+                cart.ApplyClientPositionUpdate(packet.X, packet.Y, packet.Z, packet.MotionX, packet.MotionZ, packet.Yaw);
     }
 }
