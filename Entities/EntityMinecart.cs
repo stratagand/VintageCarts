@@ -20,6 +20,7 @@ public class EntityMinecart : Entity, IMountable
     private const float Friction = 2f;
     private const float RiderYOffset = 0.35f;
     private const double RailVisualTopOffset = 0.125;
+    private const double RampHeight = 1.0;
 
     private static readonly Dictionary<string, float> FuelValues = new()
     {
@@ -128,7 +129,7 @@ public class EntityMinecart : Entity, IMountable
                     if (blockAtPos is not BlockRail) continue;
 
                     double cx = checkPos.X + 0.5;
-                    double cy = GetRailSurfaceY(blockAtPos, checkPos);
+                    double cy = GetRailSurfaceY(blockAtPos, checkPos, Pos.X, Pos.Z);
                     double cz = checkPos.Z + 0.5;
                     double dxp = Pos.X - cx;
                     double dyp = Pos.Y - cy;
@@ -149,7 +150,7 @@ public class EntityMinecart : Entity, IMountable
         {
             Block fallbackBlock = World.BlockAccessor.GetBlock(lastRailPos);
             double fx = lastRailPos.X + 0.5;
-            double fy = GetRailSurfaceY(fallbackBlock, lastRailPos);
+            double fy = GetRailSurfaceY(fallbackBlock, lastRailPos, Pos.X, Pos.Z);
             double fz = lastRailPos.Z + 0.5;
             double fdx = Pos.X - fx;
             double fdy = Pos.Y - fy;
@@ -166,7 +167,7 @@ public class EntityMinecart : Entity, IMountable
         if (railBlock != null)
         {
             lastRailPos = railPos!.Copy();
-            double railSurfaceY = GetRailSurfaceY(railBlock, railPos!);
+            double railSurfaceY = GetRailSurfaceY(railBlock, railPos!, Pos.X, Pos.Z);
             if (Math.Abs(Pos.Y - railSurfaceY) > 0.01)
             {
                 Pos.Y = railSurfaceY;
@@ -189,7 +190,7 @@ public class EntityMinecart : Entity, IMountable
                 if (lastRailPos != null)
                 {
                     Pos.X = lastRailPos.X + 0.5;
-                    Pos.Y = GetRailSurfaceY(World.BlockAccessor.GetBlock(lastRailPos), lastRailPos);
+                    Pos.Y = GetRailSurfaceY(World.BlockAccessor.GetBlock(lastRailPos), lastRailPos, Pos.X, Pos.Z);
                     Pos.Z = lastRailPos.Z + 0.5;
                     ServerPos.X = Pos.X;
                     ServerPos.Y = Pos.Y;
@@ -396,6 +397,12 @@ public class EntityMinecart : Entity, IMountable
 
         Pos.X = nextX;
         Pos.Z = nextZ;
+
+        double railSurfaceY = GetRailSurfaceY(railBlock, railPos, Pos.X, Pos.Z);
+        if (Math.Abs(Pos.Y - railSurfaceY) > 0.0001)
+        {
+            Pos.Y = railSurfaceY;
+        }
 
         if (reachedRailEnd)
         {
@@ -721,13 +728,61 @@ public class EntityMinecart : Entity, IMountable
         return a.X * b.X + a.Z * b.Z;
     }
 
-    private double GetRailSurfaceY(Block railBlock, BlockPos railPos)
+    private double GetRailSurfaceY(Block railBlock, BlockPos railPos, double worldX, double worldZ)
     {
-        // Raised main-rail variants (raised_ns / raised_we) visually end one full block higher.
-        if (railBlock.Variant.ContainsKey("type") && railBlock.Variant["type"].StartsWith("raised_"))
-            return railPos.Y + 1.0 + RailVisualTopOffset;
+        if (TryGetRampAscentFacing(railBlock, out BlockFacing ascentFacing))
+        {
+            double progress = GetRampProgress(railPos, worldX, worldZ, ascentFacing);
+            return railPos.Y + RailVisualTopOffset + RampHeight * progress;
+        }
 
         return railPos.Y + RailVisualTopOffset;
+    }
+
+    private static double GetRampProgress(BlockPos railPos, double worldX, double worldZ, BlockFacing ascentFacing)
+    {
+        double localX = GameMath.Clamp(worldX - railPos.X, 0, 1);
+        double localZ = GameMath.Clamp(worldZ - railPos.Z, 0, 1);
+
+        if (ascentFacing == BlockFacing.NORTH) return 1.0 - localZ;
+        if (ascentFacing == BlockFacing.SOUTH) return localZ;
+        if (ascentFacing == BlockFacing.EAST) return localX;
+        if (ascentFacing == BlockFacing.WEST) return 1.0 - localX;
+        return 0.0;
+    }
+
+    private static bool TryGetRampAscentFacing(Block railBlock, out BlockFacing ascentFacing)
+    {
+        ascentFacing = BlockFacing.NORTH;
+
+        if (railBlock.Code.Path.StartsWith("railslope"))
+        {
+            string orientation = ExtractRailOrientation(railBlock);
+            ascentFacing = orientation switch
+            {
+                "n" => BlockFacing.NORTH,
+                "s" => BlockFacing.SOUTH,
+                "e" => BlockFacing.EAST,
+                "w" => BlockFacing.WEST,
+                _ => BlockFacing.NORTH
+            };
+
+            return orientation is "n" or "s" or "e" or "w";
+        }
+
+        if (!railBlock.Variant.ContainsKey("type"))
+            return false;
+
+        ascentFacing = railBlock.Variant["type"] switch
+        {
+            "raised_ns" => BlockFacing.NORTH,
+            "raised_sn" => BlockFacing.SOUTH,
+            "raised_we" => BlockFacing.WEST,
+            "raised_ew" => BlockFacing.EAST,
+            _ => BlockFacing.NORTH
+        };
+
+        return railBlock.Variant["type"].StartsWith("raised_");
     }
 
     private bool HasRailAhead(BlockPos railPos, BlockFacing exit)

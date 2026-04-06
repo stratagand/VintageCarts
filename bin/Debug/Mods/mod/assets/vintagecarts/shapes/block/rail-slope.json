@@ -4,7 +4,7 @@
 		"entityTextureMode": false
 	},
 	"textureWidth": 16,
-	"textureHeight": 16,
+	"textureHeight": 23,
 	"textureSizes": {
 	},
 	"textures": {
@@ -21,7 +21,7 @@
 				"east": { "texture": "#rail", "uv": [ 0.0, 0.0, 23.0, 2.0 ] },
 				"south": { "texture": "#rail", "uv": [ 0.0, 0.0, 2.0, 2.0 ] },
 				"west": { "texture": "#rail", "uv": [ 0.0, 0.0, 23.0, 2.0 ] },
-				"up": { "texture": "#rail", "uv": [ 1.0, -1.0, 3.0, 22.0 ] },
+				"up": { "texture": "#rail", "uv": [ 1.0, 0.0, 3.0, 23.0 ] },
 				"down": { "texture": "#rail", "uv": [ 1.0, 0.0, 3.0, 23.0 ] }
 			}
 		},
@@ -47,10 +47,10 @@
 			"rotationOrigin": [ 8.0, 13.0, 8.0 ],
 			"rotationX": 45.0,
 			"faces": {
-				"north": { "texture": "#null", "uv": [ 0.0, 0.0, 16.0, 1.0 ], "enabled": false },
-				"east": { "texture": "#null", "uv": [ 0.0, 0.0, 23.0, 1.0 ], "enabled": false },
-				"south": { "texture": "#null", "uv": [ 0.0, 0.0, 16.0, 1.0 ], "enabled": false },
-				"west": { "texture": "#null", "uv": [ 0.0, 0.0, 23.0, 1.0 ], "enabled": false },
+				"north": { "texture": "#rail", "uv": [ 0.0, 0.0, 16.0, 1.0 ] },
+				"east": { "texture": "#rail", "uv": [ 0.0, 0.0, 23.0, 1.0 ]},
+				"south": { "texture": "#rail", "uv": [ 0.0, 0.0, 16.0, 1.0 ] },
+				"west": { "texture": "#rail", "uv": [ 0.0, 0.0, 23.0, 1.0 ]  },
 				"up": { "texture": "#rail", "uv": [ 0.0, 0.0, 16.0, 23.0 ] },
 				"down": { "texture": "#rail", "uv": [ 0.0, 0.0, 16.0, 23.0 ] }
 			}
