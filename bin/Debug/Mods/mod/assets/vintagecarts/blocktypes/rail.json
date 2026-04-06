@@ -18,7 +18,9 @@
                 "flat_ns",
                 "flat_we",
                 "raised_ns",
-                "raised_we"
+                "raised_we",
+                "raised_ew",
+                "raised_sn"
             ]
         }
     ],
@@ -110,6 +112,14 @@
         },
         "*-raised_ns": {
             "base": "vintagecarts:block/rail-slope"
+        },
+        "*-raised_ew": {
+            "base": "vintagecarts:block/rail-slope",
+            "rotateY": 270
+        },
+        "*-raised_sn": {
+            "base": "vintagecarts:block/rail-slope",
+            "rotateY": 180
         }
     },
     "drops": [

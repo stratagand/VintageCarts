@@ -7,6 +7,6 @@
     "minecart": { "base": "vintagecarts:item/minecart" }
   },
   "creativeInventory": {
-    "Vintagecarts": ["*"]
+    "VintageCarts": ["*"]
   }
 }
