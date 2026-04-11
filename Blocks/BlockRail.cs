@@ -59,22 +59,22 @@ public class BlockRail : Block
 
         if (count == 2)
         {
-            if (north && south) return "vintagecarts:rail-ns";
-            if (east  && west)  return "vintagecarts:rail-ew";
-            if (north && east)  return "vintagecarts:rail-ne";
-            if (north && west)  return "vintagecarts:rail-nw";
-            if (south && east)  return "vintagecarts:rail-se";
-            return "vintagecarts:rail-sw";
+            if (north && south) return "vintagecarts:rail-flat_ns";
+            if (east  && west)  return "vintagecarts:rail-flat_we";
+            if (north && east)  return "vintagecarts:rail-curved_ne";
+            if (north && west)  return "vintagecarts:rail-curved_wn";
+            if (south && east)  return "vintagecarts:rail-curved_es";
+            return "vintagecarts:rail-curved_sw";
         }
 
         // 0 or 1 neighbours: default straight aligned toward the single neighbour
         if (count == 1)
         {
-            if (north || south) return "vintagecarts:rail-ns";
-            return "vintagecarts:rail-ew";
+            if (north || south) return "vintagecarts:rail-flat_ns";
+            return "vintagecarts:rail-flat_we";
         }
 
-        return "vintagecarts:rail-ns"; // isolated default
+        return "vintagecarts:rail-flat_ns"; // isolated default
     }
 
     private void PlaceVariant(IWorldAccessor world, BlockPos pos, string blockCode)
@@ -127,7 +127,20 @@ public class BlockRail : Block
     public override void OnBlockBroken(IWorldAccessor world, BlockPos pos,
         IPlayer byPlayer, float dropQuantityMultiplier = 1)
     {
-        base.OnBlockBroken(world, pos, byPlayer, dropQuantityMultiplier);
+        // Use an explicit drop path so every rail variant state reliably drops
+        // the common rail item regardless of variantgroup metadata resolution.
+        if (world.Side == EnumAppSide.Server && byPlayer?.WorldData.CurrentGameMode != EnumGameMode.Creative)
+        {
+            Item? railItem = world.GetItem(new AssetLocation("vintagecarts:rail"));
+            if (railItem != null)
+            {
+                int quantity = Math.Max(1, GameMath.RoundRandom(world.Rand, dropQuantityMultiplier));
+                world.SpawnItemEntity(new ItemStack(railItem, quantity), pos.ToVec3d().Add(0.5, 0.25, 0.5));
+            }
+        }
+
+        // Suppress base-generated drops to avoid duplicates with the explicit drop above.
+        base.OnBlockBroken(world, pos, byPlayer, 0);
         if (!IsSlope)
             UpdateNeighborRails(world, pos);
     }

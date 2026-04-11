@@ -97,6 +97,7 @@ public class MinecartSeat : IMountableSeat
 
     public void DidUnmount(EntityAgent entityAgent)
     {
+        _cart.StopMovementImmediately();
         if (_passenger == entityAgent) _passenger = null;
         PassengerEntityIdForInit = 0;
     }

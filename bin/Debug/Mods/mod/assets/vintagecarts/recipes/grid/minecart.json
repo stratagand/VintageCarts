@@ -1,7 +1,8 @@
 {
-  "ingredientPattern": "I I,I I,III",
+  "ingredientPattern": "P P, I ,P P",
   "ingredients": {
-    "I": { "type": "item", "code": "game:ingot-iron" }
+    "I": { "type": "item", "code": "game:ingot-*", "name": "metal", "allowedVariants": ["iron"] },
+    "P": { "type": "item", "code": "game:plank-*", "name": "wood" }
   },
   "width": 3,
   "height": 3,

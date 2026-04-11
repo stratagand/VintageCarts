@@ -124,16 +124,12 @@
     },
     "drops": [
         {
-            "type": "block",
+            "type": "item",
             "code": "vintagecarts:rail",
             "quantity": {
                 "avg": 1
             }
         }
     ],
-    "creativeInventory": {
-        "VintageCarts": [
-            "*"
-        ]
-    }
+    "creativeInventory": {}
 }

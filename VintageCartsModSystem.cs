@@ -21,6 +21,7 @@ public class VintageCartsModSystem : ModSystem
         api.RegisterBlockEntityClass("BlockEntityRailSwitch", typeof(BlockEntityRailSwitch));
         api.RegisterEntity("EntityMinecart", typeof(EntityMinecart));
         api.RegisterItemClass("ItemMinecart", typeof(ItemMinecart));
+        api.RegisterItemClass("ItemRail", typeof(ItemRail));
 
         api.RegisterMountable("vintagecarts-minecart", EntityMinecart.GetMountable);
     }

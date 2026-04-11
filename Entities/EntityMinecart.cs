@@ -17,7 +17,9 @@ public class EntityMinecart : Entity, IMountable
 {
     private const float MaxSpeed = 20f;
     private const float Acceleration = 3.0f;
-    private const float Friction = 2f;
+    private const float Friction = 0.5f;
+    private const double MovingAnimationSpeedThreshold = 0.01;
+
     private const float RiderYOffset = 0.35f;
     private const double RailVisualTopOffset = 0.125;
     private const double RampHeight = 1.0;
@@ -32,9 +34,11 @@ public class EntityMinecart : Entity, IMountable
     };
 
     private MinecartSeat[] _seats = null!;
+    private ILoadedSound? _rollingSound;
 
     private InventoryGeneric fuelInventory = null!;
     private float fuelSecondsRemaining = 0f;
+    private bool movingAnimationActive = false;
 
     private BlockFacing? travelDirection = null;
     private BlockPos? lastRailPos = null;
@@ -106,7 +110,12 @@ public class EntityMinecart : Entity, IMountable
     public override void OnGameTick(float dt)
     {
         base.OnGameTick(dt);
-        if (Api.Side != EnumAppSide.Server) return;
+        if (Api.Side == EnumAppSide.Client)
+        {
+            UpdateRollingSound();
+            UpdateMovingAnimation();
+            return;
+        }
 
         BlockPos entityBlockPos = Pos.AsBlockPos;
 
@@ -315,49 +324,91 @@ public class EntityMinecart : Entity, IMountable
 
         float speed = (float)GetSpeed();
         float newSpeed;
+        bool hasDirectionalInput = movingForward || movingBackward || movingLeft || movingRight;
+        bool inputHasNoEffect = (movingForward && forwardHasNoEffect)
+            || (movingBackward && backwardHasNoEffect)
+            || (movingLeft && leftHasNoEffect)
+            || (movingRight && rightHasNoEffect);
 
-        if (movingForward && forwardHasNoEffect)
+        // If the desired rail direction is opposite to current momentum,
+        // brake smoothly to a full stop before reversing. Reversal begins only after
+        // the cart has zeroed out (desiredDot becomes 0, so reversingInput becomes false).
+        double desiredDot = Pos.Motion.X * targetMotion.X + Pos.Motion.Z * targetMotion.Z;
+        bool oppositeInput = hasDirectionalInput && !inputHasNoEffect && desiredDot < -0.0001;
+        bool reversingInput = oppositeInput;
+
+        Vec3d appliedMotion = targetMotion;
+        BlockFacing movementFacing = exit;
+
+        if (reversingInput)
         {
-            newSpeed = speed;
+            newSpeed = Math.Max(0, speed - Acceleration * dt);
+
+            if (speed > 0.0001f)
+            {
+                Vec3d currentMotion = new Vec3d(Pos.Motion.X / speed, 0, Pos.Motion.Z / speed);
+                double currentToExitDot = currentMotion.X * targetMotion.X + currentMotion.Z * targetMotion.Z;
+
+                // Straight/opposite reversal: brake in current direction first.
+                // Corner transition: reorient onto new track direction while braking.
+                bool cornerLikeTransition = Math.Abs(currentToExitDot) < 0.5;
+
+                if (cornerLikeTransition)
+                {
+                    appliedMotion = targetMotion;
+                    movementFacing = exit;
+                }
+                else
+                {
+                    appliedMotion = currentMotion;
+                    movementFacing = DominantFacing();
+                }
+            }
+        }
+        else if (movingForward && forwardHasNoEffect)
+        {
+            // Preserve ability to brake even when the requested direction cannot
+            // be resolved on the current rail piece.
+            newSpeed = Math.Max(0, speed - Acceleration * dt);
         }
         else if (movingBackward && backwardHasNoEffect)
         {
-            newSpeed = speed;
+            newSpeed = Math.Max(0, speed - Acceleration * dt);
         }
         else if (movingLeft && leftHasNoEffect)
         {
-            newSpeed = speed;
+            newSpeed = Math.Max(0, speed - Acceleration * dt);
         }
         else if (movingRight && rightHasNoEffect)
         {
-            newSpeed = speed;
+            newSpeed = Math.Max(0, speed - Acceleration * dt);
         }
-        else if (movingForward || movingBackward || movingLeft || movingRight)
+        else if (hasDirectionalInput)
         {
             newSpeed = Math.Min(speed + Acceleration * dt, MaxSpeed);
         }
         else
         {
-            newSpeed = Math.Max(0, speed - Friction * dt);
-            if (newSpeed < 0.01f)
-            {
-                newSpeed = 0;
-                if (!hasPassenger) travelDirection = null;
-            }
+            // No passive drag: preserve momentum until explicit user input
+            // (or rail-end clamping) changes the speed.
+            newSpeed = speed;
         }
 
         // If track ends ahead, clamp movement to this rail's boundary and stop immediately.
-        bool hasRailAhead = HasRailAhead(railPos, exit);
+        // Clamp checks use the active movement-facing direction, which is either
+        // current momentum (straight reverse braking) or rail exit (corner reorient).
+        BlockFacing clampFacing = movementFacing;
+        bool hasRailAhead = HasRailAhead(railPos, clampFacing);
         bool reachedRailEnd = false;
 
-        double nextX = Pos.X + targetMotion.X * newSpeed * dt;
-        double nextZ = Pos.Z + targetMotion.Z * newSpeed * dt;
+        double nextX = Pos.X + appliedMotion.X * newSpeed * dt;
+        double nextZ = Pos.Z + appliedMotion.Z * newSpeed * dt;
 
         if (!hasRailAhead && newSpeed > 0)
         {
             const double edgePad = 0.001;
 
-            if (exit == BlockFacing.SOUTH)
+            if (clampFacing == BlockFacing.SOUTH)
             {
                 double maxZ = railPos.Z + 1.0 - edgePad;
                 if (nextZ >= maxZ)
@@ -366,7 +417,7 @@ public class EntityMinecart : Entity, IMountable
                     reachedRailEnd = true;
                 }
             }
-            else if (exit == BlockFacing.NORTH)
+            else if (clampFacing == BlockFacing.NORTH)
             {
                 double minZ = railPos.Z + edgePad;
                 if (nextZ <= minZ)
@@ -375,7 +426,7 @@ public class EntityMinecart : Entity, IMountable
                     reachedRailEnd = true;
                 }
             }
-            else if (exit == BlockFacing.EAST)
+            else if (clampFacing == BlockFacing.EAST)
             {
                 double maxX = railPos.X + 1.0 - edgePad;
                 if (nextX >= maxX)
@@ -384,7 +435,7 @@ public class EntityMinecart : Entity, IMountable
                     reachedRailEnd = true;
                 }
             }
-            else if (exit == BlockFacing.WEST)
+            else if (clampFacing == BlockFacing.WEST)
             {
                 double minX = railPos.X + edgePad;
                 if (nextX <= minX)
@@ -413,15 +464,15 @@ public class EntityMinecart : Entity, IMountable
         }
         else
         {
-            Pos.Motion.Set(targetMotion.X * newSpeed, targetMotion.Y * newSpeed, targetMotion.Z * newSpeed);
-            ServerPos.Motion.Set(targetMotion.X * newSpeed, targetMotion.Y * newSpeed, targetMotion.Z * newSpeed);
+            Pos.Motion.Set(appliedMotion.X * newSpeed, appliedMotion.Y * newSpeed, appliedMotion.Z * newSpeed);
+            ServerPos.Motion.Set(appliedMotion.X * newSpeed, appliedMotion.Y * newSpeed, appliedMotion.Z * newSpeed);
         }
 
         // Snap to the lane implied by actual exit direction so dynamic branch exits
         // (e.g. leaving an NS run to East/West) can happen within the current tick.
-        if (exit == BlockFacing.NORTH || exit == BlockFacing.SOUTH)
+        if (movementFacing == BlockFacing.NORTH || movementFacing == BlockFacing.SOUTH)
             Pos.X = railPos.X + 0.5;
-        else if (exit == BlockFacing.EAST || exit == BlockFacing.WEST)
+        else if (movementFacing == BlockFacing.EAST || movementFacing == BlockFacing.WEST)
             Pos.Z = railPos.Z + 0.5;
 
         ServerPos.X = Pos.X;
@@ -441,6 +492,61 @@ public class EntityMinecart : Entity, IMountable
         }
 
         Api.Logger.Debug($"[Minecart {EntityId}] Speed: {newSpeed:F2}, Motion: ({Pos.Motion.X:F3}, {Pos.Motion.Y:F3}, {Pos.Motion.Z:F3}), Pos: ({Pos.X:F2},{Pos.Y:F2},{Pos.Z:F2})");
+    }
+
+    private void UpdateRollingSound()
+    {
+        if (Api is not ICoreClientAPI capi) return;
+
+        if (_rollingSound == null)
+        {
+            _rollingSound = capi.World.LoadSound(new SoundParams
+            {
+                Location = new AssetLocation("vintagecarts:sounds/rolling-cart"),
+                ShouldLoop = true,
+                Position = new Vec3f((float)Pos.X, (float)Pos.Y, (float)Pos.Z),
+                DisposeOnFinish = false,
+                Volume = 0.8f
+            });
+        }
+
+        double speed = GetSpeed();
+        if (speed > 0.05)
+        {
+            _rollingSound.Params.Position = new Vec3f((float)Pos.X, (float)Pos.Y, (float)Pos.Z);
+            float normalizedSpeed = (float)Math.Min(speed / MaxSpeed, 1.0);
+            _rollingSound.SetPitch(0.8f + normalizedSpeed * 0.4f);
+            if (!_rollingSound.IsPlaying)
+                _rollingSound.Start();
+        }
+        else
+        {
+            if (_rollingSound.IsPlaying)
+                _rollingSound.Stop();
+        }
+    }
+
+    private void UpdateMovingAnimation()
+    {
+        if (AnimManager == null) return;
+
+        bool shouldPlay = GetSpeed() > MovingAnimationSpeedThreshold;
+        if (shouldPlay == movingAnimationActive) return;
+
+        if (shouldPlay)
+        {
+            AnimManager.StartAnimation(new AnimationMetaData
+            {
+                Animation = "Moving",
+                Code = "Moving"
+            });
+        }
+        else
+        {
+            AnimManager.StopAnimation("Moving");
+        }
+
+        movingAnimationActive = shouldPlay;
     }
 
     public void ApplyClientPositionUpdate(double x, double y, double z, double mx, double mz, float yaw = 0)
@@ -828,6 +934,13 @@ public class EntityMinecart : Entity, IMountable
         return 0;
     }
 
+    public void StopMovementImmediately()
+    {
+        Pos.Motion.Set(0, 0, 0);
+        ServerPos.Motion.Set(0, 0, 0);
+        travelDirection = null;
+    }
+
     public override void OnInteract(EntityAgent byEntity, ItemSlot slot, Vec3d hitPosition, EnumInteractMode mode)
     {
         if (Api.Side != EnumAppSide.Server) return;
@@ -853,7 +966,10 @@ public class EntityMinecart : Entity, IMountable
         if (_seats[0].Passenger == null)
             byEntity.TryMount(_seats[0]);
         else if (_seats[0].Passenger == byEntity)
+        {
+            StopMovementImmediately();
             byEntity.TryUnmount();
+        }
     }
 
     private void DestroyAndDropMinecart(EntityAgent byEntity)
@@ -899,6 +1015,9 @@ public class EntityMinecart : Entity, IMountable
 
     public override void OnEntityDespawn(EntityDespawnData despawn)
     {
+        _rollingSound?.Stop();
+        _rollingSound?.Dispose();
+        _rollingSound = null;
         if (Api.Side == EnumAppSide.Server && fuelInventory[0].Itemstack != null)
         {
             World.SpawnItemEntity(fuelInventory[0].Itemstack, Pos.XYZ);
