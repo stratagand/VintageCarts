@@ -25,7 +25,8 @@ public class BlockRail : Block
         => IsRailBlock(world.BlockAccessor.GetBlock(pos));
 
     /// <summary>Returns true if this block variant is a switch type (T or cross).</summary>
-    public bool IsSwitch => Code.Path.StartsWith("railswitch");
+    public bool IsSwitch => Code.Path.StartsWith("railswitch")
+        || (Variant.ContainsKey("type") && (Variant["type"].StartsWith("t_") || Variant["type"] == "cross"));
 
     /// <summary>Returns true if this block variant is a slope type.</summary>
     public bool IsSlope => Code.Path.StartsWith("railslope");
@@ -33,34 +34,62 @@ public class BlockRail : Block
     // ── Variant Determination ─────────────────────────────────────────────
 
     /// <summary>
-    /// Scans cardinal neighbours and returns the best-fitting flat rail
-    /// block code (does not handle slope – those are placed manually).
+    /// Scans cardinal neighbours and returns the best-fitting rail block code.
+    /// Considers both same-level and +1 neighbours so rails can form curves/T/cross
+    /// with sloped neighbours while still selecting raised variants when needed.
     /// </summary>
     public string DetermineRailVariant(IWorldAccessor world, BlockPos pos)
     {
-        bool north = IsRail(world, pos.NorthCopy());
-        bool south = IsRail(world, pos.SouthCopy());
-        bool east  = IsRail(world, pos.EastCopy());
-        bool west  = IsRail(world, pos.WestCopy());
+        bool northSame = IsRail(world, pos.NorthCopy());
+        bool southSame = IsRail(world, pos.SouthCopy());
+        bool eastSame  = IsRail(world, pos.EastCopy());
+        bool westSame  = IsRail(world, pos.WestCopy());
+
+        bool northUp = IsRail(world, pos.NorthCopy().UpCopy());
+        bool southUp = IsRail(world, pos.SouthCopy().UpCopy());
+        bool eastUp  = IsRail(world, pos.EastCopy().UpCopy());
+        bool westUp  = IsRail(world, pos.WestCopy().UpCopy());
+
+        bool northDown = IsRail(world, pos.NorthCopy().DownCopy());
+        bool southDown = IsRail(world, pos.SouthCopy().DownCopy());
+        bool eastDown  = IsRail(world, pos.EastCopy().DownCopy());
+        bool westDown  = IsRail(world, pos.WestCopy().DownCopy());
+
+        bool north = northSame || northUp || northDown;
+        bool south = southSame || southUp || southDown;
+        bool east  = eastSame || eastUp || eastDown;
+        bool west  = westSame || westUp || westDown;
 
         int count = (north ? 1 : 0) + (south ? 1 : 0)
                   + (east  ? 1 : 0) + (west  ? 1 : 0);
 
         if (count >= 4)
-            return "vintagecarts:railswitch-cross";
+            return "vintagecarts:rail-cross";
 
         if (count == 3)
         {
-            if (!north) return "vintagecarts:railswitch-t-n";   // blocked N → S,E,W
-            if (!south) return "vintagecarts:railswitch-t-s";   // blocked S → N,E,W
-            if (!east)  return "vintagecarts:railswitch-t-e";   // blocked E → N,S,W
-            return          "vintagecarts:railswitch-t-w";      // blocked W → N,S,E
+            if (!north) return "vintagecarts:rail-t_n";   // blocked N → S,E,W
+            if (!south) return "vintagecarts:rail-t_s";   // blocked S → N,E,W
+            if (!east)  return "vintagecarts:rail-t_e";   // blocked E → N,S,W
+            return          "vintagecarts:rail-t_w";      // blocked W → N,S,E
         }
 
         if (count == 2)
         {
-            if (north && south) return "vintagecarts:rail-flat_ns";
-            if (east  && west)  return "vintagecarts:rail-flat_we";
+            if (north && south)
+            {
+                if (northUp && !southUp) return "vintagecarts:rail-raised_ns";
+                if (southUp && !northUp) return "vintagecarts:rail-raised_sn";
+                return "vintagecarts:rail-flat_ns";
+            }
+
+            if (east && west)
+            {
+                if (westUp && !eastUp) return "vintagecarts:rail-raised_we";
+                if (eastUp && !westUp) return "vintagecarts:rail-raised_ew";
+                return "vintagecarts:rail-flat_we";
+            }
+
             if (north && east)  return "vintagecarts:rail-curved_ne";
             if (north && west)  return "vintagecarts:rail-curved_wn";
             if (south && east)  return "vintagecarts:rail-curved_es";
@@ -70,7 +99,25 @@ public class BlockRail : Block
         // 0 or 1 neighbours: default straight aligned toward the single neighbour
         if (count == 1)
         {
-            if (north || south) return "vintagecarts:rail-flat_ns";
+            if (north)
+            {
+                if (northUp) return "vintagecarts:rail-raised_ns";
+                return "vintagecarts:rail-flat_ns";
+            }
+
+            if (south)
+            {
+                if (southUp) return "vintagecarts:rail-raised_sn";
+                return "vintagecarts:rail-flat_ns";
+            }
+
+            if (east)
+            {
+                if (eastUp) return "vintagecarts:rail-raised_ew";
+                return "vintagecarts:rail-flat_we";
+            }
+
+            if (westUp) return "vintagecarts:rail-raised_we";
             return "vintagecarts:rail-flat_we";
         }
 
@@ -86,9 +133,14 @@ public class BlockRail : Block
         }
     }
 
-    /// <summary>Re-evaluates and updates all cardinal rail neighbours.</summary>
+    /// <summary>Re-evaluates and updates all cardinal rail neighbours, including
+    /// lower-diagonal positions so flat rails below a newly placed rail become slopes.</summary>
+    public void UpdateNeighborRailsPublic(IWorldAccessor world, BlockPos pos)
+        => UpdateNeighborRails(world, pos);
+
     private void UpdateNeighborRails(IWorldAccessor world, BlockPos pos)
     {
+        // Same-level neighbours.
         BlockPos[] neighbors =
         {
             pos.NorthCopy(), pos.SouthCopy(),
@@ -96,6 +148,41 @@ public class BlockRail : Block
         };
 
         foreach (BlockPos nPos in neighbors)
+        {
+            if (world.BlockAccessor.GetBlock(nPos) is BlockRail rail && !rail.IsSlope)
+            {
+                string newCode = rail.DetermineRailVariant(world, nPos);
+                PlaceVariant(world, nPos, newCode);
+            }
+        }
+
+        // Lower-diagonal neighbours (one cardinal step + one down).
+        // A flat rail there should become a slope rising toward pos.
+        BlockPos[] lowerNeighbors =
+        {
+            pos.NorthCopy().DownCopy(), pos.SouthCopy().DownCopy(),
+            pos.EastCopy().DownCopy(),  pos.WestCopy().DownCopy()
+        };
+
+        foreach (BlockPos nPos in lowerNeighbors)
+        {
+            if (world.BlockAccessor.GetBlock(nPos) is BlockRail rail && !rail.IsSlope)
+            {
+                string newCode = rail.DetermineRailVariant(world, nPos);
+                PlaceVariant(world, nPos, newCode);
+            }
+        }
+
+        // Upper-diagonal neighbours (one cardinal step + one up).
+        // Needed so upper rails adapt (e.g. straight -> curve/T) when a lower
+        // rail is placed and becomes a slope connection target.
+        BlockPos[] upperNeighbors =
+        {
+            pos.NorthCopy().UpCopy(), pos.SouthCopy().UpCopy(),
+            pos.EastCopy().UpCopy(),  pos.WestCopy().UpCopy()
+        };
+
+        foreach (BlockPos nPos in upperNeighbors)
         {
             if (world.BlockAccessor.GetBlock(nPos) is BlockRail rail && !rail.IsSlope)
             {
@@ -232,13 +319,16 @@ public class BlockRail : Block
         if (orientation is "ew" or "e" or "w")
             return entry == BlockFacing.EAST ? BlockFacing.WEST : BlockFacing.EAST;
 
+        // T junctions / cross must use explicit branch logic.
+        if (orientation.StartsWith("t-") || orientation == "cross")
+            return GetTExitFacing(orientation, entry, switchState);
+
         // Curves: the other connected facing
         var (f1, f2) = GetConnections(orientation);
         if (entry == f1) return f2;
         if (entry == f2) return f1;
 
-        // T junctions / cross – use switch state (stored in BlockEntityRailSwitch)
-        return GetTExitFacing(orientation, entry, switchState);
+        return entry.Opposite;
     }
 
     private static BlockFacing GetTExitFacing(string orientation, BlockFacing entry, int switchState)
@@ -254,8 +344,14 @@ public class BlockRail : Block
             case "cross": connected.AddRange(new[] { BlockFacing.NORTH, BlockFacing.SOUTH, BlockFacing.EAST, BlockFacing.WEST }); break;
         }
 
-        // Remove the entry direction (cart came from entry, entering means opposite of entry is where it's going from)
-        connected.Remove(entry.Opposite);
+        // Preserve momentum by default: if straight-through is possible on this
+        // junction, continue in the same travel axis.
+        if (connected.Contains(entry.Opposite))
+        {
+            return entry.Opposite;
+        }
+
+        // Otherwise, pick one of the remaining branches (excluding where we came from).
         connected.Remove(entry);
 
         if (connected.Count == 0) return entry.Opposite; // fallback

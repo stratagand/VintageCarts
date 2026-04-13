@@ -217,7 +217,6 @@ public class EntityMinecart : Entity, IMountable
     {
         // Extract orientation based on block type and variant group
         string orientation = ExtractRailOrientation(railBlock);
-
         bool isSlope = railBlock.Code.Path.StartsWith("railslope");
 
         bool hasPassenger = _seats[0].Passenger != null;
@@ -225,6 +224,10 @@ public class EntityMinecart : Entity, IMountable
         bool movingBackward = hasPassenger && (_seats[0].Controls.Backward || _seats[0].Controls.Sneak || _seats[0].Controls.Jump);
         bool movingLeft = hasPassenger && _seats[0].Controls.Left;
         bool movingRight = hasPassenger && _seats[0].Controls.Right;
+        bool hasDirectionalInput = movingForward || movingBackward || movingLeft || movingRight;
+        bool stoppedAtJunctionForInput = travelDirection == null
+            && GetSpeed() < 0.05
+            && (orientation.StartsWith("t-") || orientation == "cross");
         bool forwardHasNoEffect = false;
         bool backwardHasNoEffect = false;
         bool leftHasNoEffect = false;
@@ -236,7 +239,12 @@ public class EntityMinecart : Entity, IMountable
         // If exactly perpendicular to available rail directions, forward has no velocity effect.
         if (movingForward)
         {
-            if (TryGetForwardFacingDirection(orientation, out BlockFacing facingDirection))
+            if (stoppedAtJunctionForInput)
+            {
+                // Let junction branch selection resolve from rider input without
+                // fabricating an entry direction when starting from rest.
+            }
+            else if (TryGetForwardFacingDirection(orientation, out BlockFacing facingDirection))
             {
                 travelDirection = facingDirection;
             }
@@ -247,7 +255,12 @@ public class EntityMinecart : Entity, IMountable
         }
         else if (movingBackward)
         {
-            if (TryGetBackwardFacingDirection(orientation, out BlockFacing facingDirection))
+            if (stoppedAtJunctionForInput)
+            {
+                // Let junction branch selection resolve from rider input without
+                // fabricating an entry direction when starting from rest.
+            }
+            else if (TryGetBackwardFacingDirection(orientation, out BlockFacing facingDirection))
             {
                 travelDirection = facingDirection;
             }
@@ -258,7 +271,12 @@ public class EntityMinecart : Entity, IMountable
         }
         else if (movingLeft)
         {
-            if (TryGetLeftFacingDirection(orientation, out BlockFacing facingDirection))
+            if (stoppedAtJunctionForInput)
+            {
+                // Let junction branch selection resolve from rider input without
+                // fabricating an entry direction when starting from rest.
+            }
+            else if (TryGetLeftFacingDirection(orientation, out BlockFacing facingDirection))
             {
                 travelDirection = facingDirection;
             }
@@ -269,7 +287,12 @@ public class EntityMinecart : Entity, IMountable
         }
         else if (movingRight)
         {
-            if (TryGetRightFacingDirection(orientation, out BlockFacing facingDirection))
+            if (stoppedAtJunctionForInput)
+            {
+                // Let junction branch selection resolve from rider input without
+                // fabricating an entry direction when starting from rest.
+            }
+            else if (TryGetRightFacingDirection(orientation, out BlockFacing facingDirection))
             {
                 travelDirection = facingDirection;
             }
@@ -280,8 +303,30 @@ public class EntityMinecart : Entity, IMountable
         }
         else
         {
-            if (travelDirection == null)
-                travelDirection = DefaultFacingForOrientation(orientation);
+            double horizontalSpeed = Math.Abs(Pos.Motion.X) + Math.Abs(Pos.Motion.Z);
+
+            // With no input, direction should follow actual momentum.
+            // This avoids stale-direction routing at T/cross junctions.
+            if (!hasDirectionalInput && horizontalSpeed > 0.0005)
+            {
+                travelDirection = DominantFacing();
+            }
+            else if (!hasDirectionalInput && (orientation.StartsWith("t-") || orientation == "cross"))
+            {
+                travelDirection = InferJunctionTravelDirectionFromMotion(railPos, orientation, travelDirection);
+            }
+            else if (horizontalSpeed > 0.0005)
+            {
+                travelDirection = DominantFacing();
+            }
+            else if (travelDirection == null)
+            {
+                // If nearly stationary and no direction state exists, use rail default.
+                travelDirection = horizontalSpeed > 0.001
+                    ? DominantFacing()
+                    : DefaultFacingForOrientation(orientation);
+            }
+
         }
 
         int switchState = 0;
@@ -291,15 +336,29 @@ public class EntityMinecart : Entity, IMountable
         BlockFacing entry = (travelDirection ?? BlockFacing.SOUTH).Opposite;
         BlockFacing exit = (railBlock as BlockRail)!.GetExitFacing(orientation, entry, switchState, World, railPos);
 
-        // At junctions (multiple possible continuations), let forward input choose the branch
+        // At junctions (multiple possible continuations), let input choose the branch
         // that best matches rider facing.
-        if ((movingForward || movingBackward || movingLeft || movingRight)
+        if (hasDirectionalInput
             && TryGetJunctionPreferredExitForInput(railPos, orientation, entry, movingForward, movingBackward, movingLeft, movingRight, out BlockFacing preferredExit))
         {
             exit = preferredExit;
         }
 
-        travelDirection = exit;
+        // T-junction special case:
+        // - If straight-through continuation exists, preserve momentum by default.
+        // - If straight-through does not exist and there is no user input, stop (rail-end behavior).
+        bool stopAtBlockedTJunctionNoInput = orientation.StartsWith("t-")
+            && !hasDirectionalInput
+            && !HasRailAhead(railPos, entry.Opposite);
+
+        if (stopAtBlockedTJunctionNoInput)
+        {
+            travelDirection = null;
+        }
+        else
+        {
+            travelDirection = exit;
+        }
 
         // Avoid snapping the rider's camera: keep yaw fixed while someone is mounted.
         // We still align yaw when unmounted so parked carts face track direction.
@@ -324,7 +383,6 @@ public class EntityMinecart : Entity, IMountable
 
         float speed = (float)GetSpeed();
         float newSpeed;
-        bool hasDirectionalInput = movingForward || movingBackward || movingLeft || movingRight;
         bool inputHasNoEffect = (movingForward && forwardHasNoEffect)
             || (movingBackward && backwardHasNoEffect)
             || (movingLeft && leftHasNoEffect)
@@ -340,7 +398,13 @@ public class EntityMinecart : Entity, IMountable
         Vec3d appliedMotion = targetMotion;
         BlockFacing movementFacing = exit;
 
-        if (reversingInput)
+        if (stopAtBlockedTJunctionNoInput)
+        {
+            // Entering a blocked side of a T with no input behaves like track end.
+            newSpeed = 0;
+            appliedMotion = new Vec3d(0, 0, 0);
+        }
+        else if (reversingInput)
         {
             newSpeed = Math.Max(0, speed - Acceleration * dt);
 
@@ -494,6 +558,36 @@ public class EntityMinecart : Entity, IMountable
         Api.Logger.Debug($"[Minecart {EntityId}] Speed: {newSpeed:F2}, Motion: ({Pos.Motion.X:F3}, {Pos.Motion.Y:F3}, {Pos.Motion.Z:F3}), Pos: ({Pos.X:F2},{Pos.Y:F2},{Pos.Z:F2})");
     }
 
+    private BlockFacing InferJunctionTravelDirectionFromMotion(BlockPos railPos, string orientation, BlockFacing? fallback)
+    {
+        List<BlockFacing> options = GetConnectedFacings(orientation);
+        AddPerpendicularNeighborBranches(railPos, orientation, options);
+        options.RemoveAll(f => !HasRailAhead(railPos, f));
+
+        if (options.Count == 0)
+            return fallback ?? BlockFacing.SOUTH;
+
+        Vec3d motion = new Vec3d(Pos.Motion.X, 0, Pos.Motion.Z);
+        double magnitude = Math.Abs(motion.X) + Math.Abs(motion.Z);
+        if (magnitude <= 0.0005)
+            return fallback ?? options[0];
+
+        double bestDot = double.NegativeInfinity;
+        BlockFacing best = options[0];
+
+        foreach (BlockFacing option in options)
+        {
+            double dot = DotHorizontal(motion, FacingToMotion(option));
+            if (dot > bestDot)
+            {
+                bestDot = dot;
+                best = option;
+            }
+        }
+
+        return best;
+    }
+
     private void UpdateRollingSound()
     {
         if (Api is not ICoreClientAPI capi) return;
@@ -607,6 +701,11 @@ public class EntityMinecart : Entity, IMountable
             if (railBlock.Variant.ContainsKey("type"))
             {
                 string typeValue = railBlock.Variant["type"];
+                if (typeValue == "cross")
+                    return "cross";
+                // T-junction types: "t_n" → "t-n", "t_s" → "t-s", etc.
+                if (typeValue.StartsWith("t_"))
+                    return "t-" + typeValue[2..];
                 // Extract direction from patterns like "curved_es", "flat_ns", "raised_we"
                 int underscore = typeValue.LastIndexOf('_');
                 if (underscore >= 0 && underscore < typeValue.Length - 1)

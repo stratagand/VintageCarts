@@ -4,7 +4,7 @@
 		"entityTextureMode": false
 	},
 	"textureWidth": 16,
-	"textureHeight": 23,
+	"textureHeight": 24,
 	"textureSizes": {
 	},
 	"textures": {
@@ -13,31 +13,31 @@
 		{
 			"name": "west-rail",
 			"from": [ 1.0, 15.0, -1.0 ],
-			"to": [ 3.0, 17.0, 22.0 ],
-			"rotationOrigin": [ 0.0, 15.0, 0.0 ],
+			"to": [ 3.0, 17.0, 23.0 ],
+			"rotationOrigin": [ 0.0, 16.0, 0.0 ],
 			"rotationX": 45.0,
 			"faces": {
 				"north": { "texture": "#rail", "uv": [ 0.0, 0.0, 2.0, 2.0 ] },
-				"east": { "texture": "#rail", "uv": [ 0.0, 0.0, 23.0, 2.0 ], "windMode": [-1,-1,-1,-1], "windData": [0,1,0,0] },
+				"east": { "texture": "#rail", "uv": [ 0.0, 0.0, 24.0, 2.0 ], "windMode": [-1,-1,-1,-1], "windData": [0,1,0,0] },
 				"south": { "texture": "#rail", "uv": [ 0.0, 0.0, 2.0, 2.0 ] },
-				"west": { "texture": "#rail", "uv": [ 0.0, 0.0, 23.0, 2.0 ] },
-				"up": { "texture": "#rail", "uv": [ 1.0, 0.0, 3.0, 23.0 ], "windMode": [-1,-1,-1,-1], "windData": [1,0,0,1] },
+				"west": { "texture": "#rail", "uv": [ 0.0, 0.0, 24.0, 2.0 ] },
+				"up": { "texture": "#rail", "uv": [ 1.0, 0.0, 3.0, 24.0 ], "windMode": [-1,-1,-1,-1], "windData": [1,0,0,1] },
 				"down": { "texture": "#rail", "uv": [ 1.0, 0.0, 3.0, 23.0 ], "autoUv": false, "windMode": [-1,-1,-1,-1] }
 			}
 		},
 		{
 			"name": "east-rail",
 			"from": [ 13.0, 15.0, -1.0 ],
-			"to": [ 15.0, 17.0, 22.0 ],
-			"rotationOrigin": [ 0.0, 15.0, 0.0 ],
+			"to": [ 15.0, 17.0, 23.0 ],
+			"rotationOrigin": [ 0.0, 16.0, 0.0 ],
 			"rotationX": 45.0,
 			"faces": {
 				"north": { "texture": "#rail", "uv": [ 0.0, 0.0, 2.0, 2.0 ] },
-				"east": { "texture": "#rail", "uv": [ 0.0, 0.0, 23.0, 2.0 ], "windMode": [-1,-1,-1,-1], "windData": [0,1,0,0] },
+				"east": { "texture": "#rail", "uv": [ 0.0, 0.0, 24.0, 2.0 ], "windMode": [-1,-1,-1,-1], "windData": [0,1,0,0] },
 				"south": { "texture": "#rail", "uv": [ 0.0, 0.0, 2.0, 2.0 ] },
-				"west": { "texture": "#rail", "uv": [ 0.0, 0.0, 23.0, 2.0 ] },
-				"up": { "texture": "#rail", "uv": [ 13.0, 0.0, 15.0, 23.0 ], "windMode": [-1,-1,-1,-1], "windData": [1,0,0,1] },
-				"down": { "texture": "#rail", "uv": [ 13.0, 0.0, 15.0, 23.0 ], "windMode": [-1,-1,-1,-1] }
+				"west": { "texture": "#rail", "uv": [ 0.0, 0.0, 24.0, 2.0 ] },
+				"up": { "texture": "#rail", "uv": [ 13.0, 0.0, 15.0, 24.0 ], "windMode": [-1,-1,-1,-1], "windData": [1,0,0,1] },
+				"down": { "texture": "#rail", "uv": [ 13.0, 0.0, 15.0, 24.0 ], "windMode": [-1,-1,-1,-1] }
 			}
 		},
 		{

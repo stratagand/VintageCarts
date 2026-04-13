@@ -6,8 +6,8 @@
     "authors": [
         "VintageStoryMods"
     ],
-    "description": "Adds fuel-powered rideable minecarts and auto-connecting rail tracks to Vintage Story.",
-    "version": "1.0.0",
+    "description": "Adds simple rideable minecarts and auto-connecting rail tracks to Vintage Story.",
+    "version": "0.0.5",
     "side": "Universal",
     "requiredOnClient": true,
     "requiredOnServer": true,

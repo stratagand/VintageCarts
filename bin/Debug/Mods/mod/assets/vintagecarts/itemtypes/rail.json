@@ -1,7 +1,7 @@
 {
     "code": "rail",
     "class": "ItemRail",
-    "maxstacksize": 64,
+    "maxstacksize": 128,
     "shape": { "base": "vintagecarts:block/rail-straight" },
     "textures": {
         "rail": { "base": "vintagecarts:block/rail" }
@@ -26,6 +26,9 @@
         "rotation": { "x": 0, "y": -50, "z": 67 },
         "origin": { "x": 0.5, "y": 0.13, "z": 0.5 }
     },
+    "blockMaterial": "wood",
+    "resistance": 0.05,
+    "requiredMiningTier": 0,
     "creativeInventory": {
         "VintageCarts": ["*"]
     }
