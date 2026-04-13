@@ -1,0 +1,10 @@
+Enhancements
+Support 3-way and 4-way crossings
+Support ability to change direction on train track (either by Cart driver or future signal)
+Additional light source for cart
+Allow cart to act as mobile chest
+
+Bugs to Fix
+If there's a gap of one space between the tracks and you place a track one block higher, it raises the ramp to angle up to the higher block.  When you delete the higher block, have it go back to the lower state.
+To place tracks downward, you need to have stairs to allow for the rail to do the proper height check.
+When placing tracks at a downward slope, when you reach the bottom for a horizontal track again, the track lays flat instead of placing an angled track to make the connection.  You need to delete the middle track and replace it to check the height check to trigger.
