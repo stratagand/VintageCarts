@@ -1,0 +1,15 @@
+[{
+  "ingredientPattern": "C,S",
+	"ingredients": {
+		"S": { "type": "item", "code": "vintagecarts:minecart" },
+		"C": { "type": "block", "code": "game:chest-east", "attributes": { "type": "normal-generic" } }
+	},
+  "shapeless": true,
+  "width": 2,
+  "height": 1,
+  "output": {
+    "type": "item",
+    "code": "vintagecarts:minecart-storage",
+    "quantity": 1
+  }
+}]

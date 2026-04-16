@@ -38,3 +38,13 @@ public class CartPositionPacket
     [ProtoMember(7)]
     public float Yaw { get; set; }
 }
+
+// ── Storage cart packets ────────────────────────────────────────────────────
+
+/// <summary>Server → client: open the storage cart GUI.</summary>
+[ProtoContract]
+public class OpenStorageGuiPacket
+{
+    [ProtoMember(1)]
+    public long EntityId { get; set; }
+}

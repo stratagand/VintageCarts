@@ -38,7 +38,8 @@ public class ItemMinecart : Item
 			spawnY,
 			blockSel.Position.Z + 0.5);
 
-		EntityProperties? props = byEntity.World.GetEntityType(new AssetLocation("vintagecarts:minecart"));
+		string entityCode = Attributes?["entityCode"].AsString("vintagecarts:minecart") ?? "vintagecarts:minecart";
+		EntityProperties? props = byEntity.World.GetEntityType(new AssetLocation(entityCode));
 		if (props == null) return;
 
 		Entity entity = byEntity.World.ClassRegistry.CreateEntity(props);

@@ -1,0 +1,36 @@
+{
+  "code": "minecart-storage",
+  "class": "ItemStorageMinecart",
+  "maxstacksize": 1,
+  "shape": {
+    "base": "vintagecarts:entity/minecart-storage"
+  },
+  "textures": {
+    "minecart": {
+      "base": "vintagecarts:item/minecart-storage"
+    }
+  },
+  "guiTransform": {
+    "translation": { "x": -2, "y": -10, "z": 0 },
+    "rotation": { "x": 0, "y": 0, "z": 180 },
+    "scale": 1.42
+  },
+  "tpHandTransform": {
+    "translation": { "x": -1.2, "y": -0.4, "z": -1.3 },
+    "rotation": { "x": -68, "y": 0, "z": 0 },
+    "origin": { "x": 0.5, "y": 0.1, "z": 0.5 },
+    "scale": 0.4
+  },
+  "groundTransform": {
+    "origin": { "x": 0.5, "y": 0, "z": 0.5 },
+    "scale": 2
+  },
+  "fpHandTransform": {
+    "translation": { "x": 0, "y": 0.1, "z": 0 },
+    "rotation": { "x": 0, "y": -50, "z": 67 },
+    "origin": { "x": 0.5, "y": 0.13, "z": 0.5 }
+  },
+  "creativeInventory": {
+    "VintageCarts": [ "*" ]
+  }
+}

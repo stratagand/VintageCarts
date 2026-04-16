@@ -31,3 +31,11 @@ C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\obj\Debug\Vintag
 C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\obj\Debug\refint\VintageCarts.dll
 C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\obj\Debug\VintageCarts.pdb
 C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\obj\Debug\ref\VintageCarts.dll
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\entities\minecart-lighted.json
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\entities\minecart-storage.json
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\itemtypes\minecart-lighted.json
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\itemtypes\minecart-storage.json
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\recipes\grid\minecart-lighted.json
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\recipes\grid\minecart-storage.json
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\shapes\entity\minecart-lighted.json
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\shapes\entity\minecart-storage.json

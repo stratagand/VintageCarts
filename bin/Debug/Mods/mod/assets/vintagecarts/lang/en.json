@@ -16,7 +16,13 @@
   "vintagecarts:block-railslope-e": "Rail Slope (high E)",
   "vintagecarts:block-railslope-w": "Rail Slope (high W)",
   "vintagecarts:item-minecart": "Minecart",
+  "vintagecarts:item-minecart-lighted": "Lighted Minecart",
+  "vintagecarts:item-minecart-storage": "Storage Minecart",
   "vintagecarts:item-rail": "Rail",
   "vintagecarts:item-creature-minecart": "Minecart",
-  "vintagecarts:item-dead-creature-minecart": "Broken Minecart"
+  "vintagecarts:item-dead-creature-minecart": "Broken Minecart",
+  "vintagecarts:item-creature-minecart-lighted": "Lighted Minecart",
+  "vintagecarts:item-dead-creature-minecart-lighted": "Broken Lighted Minecart",
+  "vintagecarts:item-creature-minecart-storage": "Storage Cart",
+  "vintagecarts:item-dead-creature-minecart-storage": "Broken Storage Cart"
 }

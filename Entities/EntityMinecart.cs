@@ -15,9 +15,9 @@ namespace VintageCarts.Entities;
 
 public class EntityMinecart : Entity, IMountable
 {
-    private const float MaxSpeed = 20f;
-    private const float Acceleration = 3.0f;
-    private const float Friction = 0.5f;
+    private static float MaxSpeed     => VintageCartsModSystem.Config.MaxSpeed;
+    private static float Friction     => VintageCartsModSystem.Config.Friction;
+    private static float Acceleration => VintageCartsModSystem.Config.Acceleration;
     private const double MovingAnimationSpeedThreshold = 0.01;
 
     private const float RiderYOffset = 0.35f;
@@ -1071,7 +1071,37 @@ public class EntityMinecart : Entity, IMountable
         }
     }
 
-    private void DestroyAndDropMinecart(EntityAgent byEntity)
+    public void TryAttachStorageCart(ItemSlot slot)
+    {
+        EntityProperties? props = World.GetEntityType(new AssetLocation("vintagecarts:minecart-storage"));
+        if (props == null) return;
+
+        // Spawn the storage cart 1 block behind the minecart (opposite to facing direction).
+        // VS forward vector is (-sin(yaw), cos(yaw)), so back is (sin(yaw), -cos(yaw)).
+        double backX = Math.Sin(Pos.Yaw);
+        double backZ = -Math.Cos(Pos.Yaw);
+        Vec3d spawnPos = new Vec3d(
+            Pos.X + backX * 1.0,
+            Pos.Y,
+            Pos.Z + backZ * 1.0
+        );
+
+        EntityStorageMinecart storageCart = (EntityStorageMinecart)World.ClassRegistry.CreateEntity(props);
+        storageCart.ServerPos.SetPos(spawnPos);
+        storageCart.Pos.SetPos(spawnPos);
+        storageCart.ServerPos.Yaw = Pos.Yaw;
+        storageCart.Pos.Yaw = Pos.Yaw;
+        storageCart.LeaderId = EntityId;
+
+        World.SpawnEntity(storageCart);
+
+        slot.TakeOut(1);
+        slot.MarkDirty();
+    }
+
+    protected virtual AssetLocation DropItemLocation => new AssetLocation("vintagecarts:minecart");
+
+    protected virtual void DestroyAndDropMinecart(EntityAgent byEntity)
     {
         if (_isBeingDestroyed) return;
         _isBeingDestroyed = true;
@@ -1080,7 +1110,7 @@ public class EntityMinecart : Entity, IMountable
         if (_seats?[0].Passenger != null)
             (_seats[0].Passenger as EntityAgent)?.TryUnmount();
 
-        Item? minecartItem = World.GetItem(new AssetLocation("vintagecarts:minecart"));
+        Item? minecartItem = World.GetItem(DropItemLocation);
         if (minecartItem != null)
         {
             World.SpawnItemEntity(new ItemStack(minecartItem, 1), Pos.XYZ);
