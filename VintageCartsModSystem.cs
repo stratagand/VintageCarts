@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
@@ -48,6 +49,8 @@ public class VintageCartsModSystem : ModSystem
             .SetMessageHandler<FuelSlotChangedPacket>(OnClientFuelSlotChanged);
     }
 
+    private readonly Dictionary<long, GuiDialogStorageMinecart> _openStorageDialogs = new();
+
     public override void StartClientSide(ICoreClientAPI api)
     {
         api.Network
@@ -83,9 +86,18 @@ public class VintageCartsModSystem : ModSystem
 
     private void OnOpenStorageGui(ICoreClientAPI api, OpenStorageGuiPacket packet)
     {
+        if (_openStorageDialogs.TryGetValue(packet.EntityId, out GuiDialogStorageMinecart? existing))
+        {
+            existing.TryClose();
+            return;
+        }
+
         var entity = api.World.GetEntityById(packet.EntityId) as EntityStorageMinecart;
         if (entity == null) return;
+
         var gui = new GuiDialogStorageMinecart(api, entity);
+        _openStorageDialogs[packet.EntityId] = gui;
+        gui.OnClosed += () => _openStorageDialogs.Remove(packet.EntityId);
         gui.TryOpen();
     }
 }

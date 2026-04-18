@@ -17,11 +17,21 @@ public class ItemStorageMinecart : Item
         BlockSelection blockSel, EntitySelection entitySel, bool firstEvent,
         ref EnumHandHandling handling)
     {
-        // Attachment: right-click an existing minecart while holding this item.
+        // Attachment: right-click a minecart or any storage cart in its chain.
+        // Always attaches to the tail of the chain regardless of which cart was clicked.
         if (entitySel?.Entity is EntityMinecart cart)
         {
             if (byEntity.World.Side == EnumAppSide.Server)
                 cart.TryAttachStorageCart(itemslot);
+
+            handling = EnumHandHandling.PreventDefault;
+            return;
+        }
+
+        if (entitySel?.Entity is EntityStorageMinecart storageCart)
+        {
+            if (byEntity.World.Side == EnumAppSide.Server)
+                storageCart.GetPrimaryCart()?.TryAttachStorageCart(itemslot);
 
             handling = EnumHandHandling.PreventDefault;
             return;

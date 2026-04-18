@@ -43,6 +43,13 @@ public class EntityMinecart : Entity, IMountable
     private BlockFacing? travelDirection = null;
     private BlockPos? lastRailPos = null;
     private bool _isBeingDestroyed = false;
+    private long _followerCartId = -1;
+
+    public long FollowerCartId
+    {
+        get => _followerCartId;
+        set => _followerCartId = value;
+    }
 
     public override void Initialize(EntityProperties properties, ICoreAPI api, long InChunkIndex3d)
     {
@@ -1078,27 +1085,43 @@ public class EntityMinecart : Entity, IMountable
         EntityProperties? props = World.GetEntityType(new AssetLocation("vintagecarts:minecart-storage"));
         if (props == null) return;
 
-        // Spawn the storage cart 1 block behind the minecart (opposite to facing direction).
-        // VS forward vector is (-sin(yaw), cos(yaw)), so back is (sin(yaw), -cos(yaw)).
-        double backX = Math.Sin(Pos.Yaw);
-        double backZ = -Math.Cos(Pos.Yaw);
+        Entity tail = FindChainTail();
+
+        double backX = Math.Sin(tail.ServerPos.Yaw);
+        double backZ = -Math.Cos(tail.ServerPos.Yaw);
         Vec3d spawnPos = new Vec3d(
-            Pos.X + backX * 1.0,
-            Pos.Y,
-            Pos.Z + backZ * 1.0
+            tail.ServerPos.X + backX,
+            tail.ServerPos.Y,
+            tail.ServerPos.Z + backZ
         );
 
-        EntityStorageMinecart storageCart = (EntityStorageMinecart)World.ClassRegistry.CreateEntity(props);
-        storageCart.ServerPos.SetPos(spawnPos);
-        storageCart.Pos.SetPos(spawnPos);
-        storageCart.ServerPos.Yaw = Pos.Yaw;
-        storageCart.Pos.Yaw = Pos.Yaw;
-        storageCart.LeaderId = EntityId;
+        EntityStorageMinecart newCart = (EntityStorageMinecart)World.ClassRegistry.CreateEntity(props);
+        newCart.ServerPos.SetPos(spawnPos);
+        newCart.Pos.SetPos(spawnPos);
+        newCart.ServerPos.Yaw = tail.ServerPos.Yaw;
+        newCart.Pos.Yaw = tail.ServerPos.Yaw;
+        newCart.LeaderId = tail.EntityId;
 
-        World.SpawnEntity(storageCart);
+        World.SpawnEntity(newCart);
+
+        // EntityId is assigned during SpawnEntity, so link tail → new cart after spawn.
+        if (tail is EntityStorageMinecart storageTail)
+            storageTail.FollowerCartId = newCart.EntityId;
+        else
+            _followerCartId = newCart.EntityId;
 
         slot.TakeOut(1);
         slot.MarkDirty();
+    }
+
+    // Returns the last entity in the storage-cart chain (this if no carts are attached).
+    private Entity FindChainTail()
+    {
+        if (_followerCartId < 0) return this;
+        if (World.GetEntityById(_followerCartId) is EntityStorageMinecart follower)
+            return follower.FindTail();
+        _followerCartId = -1;
+        return this;
     }
 
     protected virtual AssetLocation DropItemLocation => new AssetLocation("vintagecarts:minecart");
@@ -1129,6 +1152,7 @@ public class EntityMinecart : Entity, IMountable
         var fuelTree = new TreeAttribute();
         fuelInventory.ToTreeAttributes(fuelTree);
         fuelTree.ToBytes(writer);
+        writer.Write(_followerCartId);
     }
 
     public override void FromBytes(BinaryReader reader, bool isSync)
@@ -1140,6 +1164,7 @@ public class EntityMinecart : Entity, IMountable
             TreeAttribute tree = new TreeAttribute();
             tree.FromBytes(reader);
             fuelInventory?.FromTreeAttributes(tree);
+            _followerCartId = reader.ReadInt64();
         }
         catch { }
     }

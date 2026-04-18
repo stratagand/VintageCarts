@@ -23,12 +23,47 @@ public class EntityStorageMinecart : Entity
 
     private InventoryGeneric storageInventory = null!;
     private long _leaderId = -1;
+    private long _followerCartId = -1;
     private bool _isBeingDestroyed = false;
 
     public long LeaderId
     {
         get => _leaderId;
         set => _leaderId = value;
+    }
+
+    public long FollowerCartId
+    {
+        get => _followerCartId;
+        set => _followerCartId = value;
+    }
+
+    // Returns the last EntityStorageMinecart in this cart's forward chain (may be this).
+    public EntityStorageMinecart FindTail()
+    {
+        if (_followerCartId < 0) return this;
+        if (World.GetEntityById(_followerCartId) is EntityStorageMinecart follower)
+            return follower.FindTail();
+        _followerCartId = -1;
+        return this;
+    }
+
+    // Traverses leader chain to find the primary EntityMinecart.
+    public EntityMinecart? GetPrimaryCart()
+    {
+        Entity? leader = World.GetEntityById(_leaderId);
+        if (leader is EntityMinecart primary) return primary;
+        if (leader is EntityStorageMinecart storageLeader) return storageLeader.GetPrimaryCart();
+        return null;
+    }
+
+    // Returns the entity whose motion vector should be used for "behind" direction.
+    // Storage carts always have zero motion, so chained followers must read from the root.
+    private Entity GetMotionSource()
+    {
+        Entity? leader = World.GetEntityById(_leaderId);
+        if (leader is EntityStorageMinecart storageLeader) return storageLeader.GetMotionSource();
+        return leader ?? this;
     }
 
     /// <summary>Exposed for the GUI dialog to reference the inventory directly.</summary>
@@ -55,11 +90,12 @@ public class EntityStorageMinecart : Entity
             return;
         }
 
-        // Derive the "behind" direction from the leader's actual motion vector.
-        // Yaw is not updated on EntityMinecart while a passenger is riding, so it is
-        // unreliable during movement. The motion vector always reflects actual travel.
-        double mx = leader.ServerPos.Motion.X;
-        double mz = leader.ServerPos.Motion.Z;
+        // Derive the "behind" direction from the root minecart's motion vector.
+        // Storage carts always have zero motion, so chained followers must climb the
+        // leader chain to find the EntityMinecart that carries the real velocity.
+        Entity motionSource = GetMotionSource();
+        double mx = motionSource.ServerPos.Motion.X;
+        double mz = motionSource.ServerPos.Motion.Z;
         double horizSpeed = Math.Sqrt(mx * mx + mz * mz);
 
         double backX, backZ;
@@ -130,6 +166,13 @@ public class EntityStorageMinecart : Entity
         if (_isBeingDestroyed) return;
         _isBeingDestroyed = true;
 
+        // Remove this cart from its leader's forward link so the chain doesn't dangle.
+        Entity? leader = World.GetEntityById(_leaderId);
+        if (leader is EntityMinecart minecartLeader)
+            minecartLeader.FollowerCartId = -1;
+        else if (leader is EntityStorageMinecart storageLeader)
+            storageLeader.FollowerCartId = -1;
+
         // Close the inventory for all players watching it, then drop contents.
         if (Api is ICoreServerAPI sapi)
         {
@@ -158,6 +201,7 @@ public class EntityStorageMinecart : Entity
         var tree = new TreeAttribute();
         storageInventory.ToTreeAttributes(tree);
         tree.ToBytes(writer);
+        writer.Write(_followerCartId);
     }
 
     public override void FromBytes(BinaryReader reader, bool isSync)
@@ -169,6 +213,7 @@ public class EntityStorageMinecart : Entity
             var tree = new TreeAttribute();
             tree.FromBytes(reader);
             storageInventory?.FromTreeAttributes(tree);
+            _followerCartId = reader.ReadInt64();
         }
         catch { }
     }
