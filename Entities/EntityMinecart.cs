@@ -376,9 +376,11 @@ public class EntityMinecart : Entity, IMountable
                           || orientation == "s" && exit == BlockFacing.SOUTH
                           || orientation == "e" && exit == BlockFacing.EAST
                           || orientation == "w" && exit == BlockFacing.WEST;
+            // Do NOT normalize: FacingToMotion already produces a unit horizontal vector, so
+            // keeping the horizontal components at length 1 preserves the cart's horizontal speed
+            // across every slope tick. Normalizing the 3D vector would shrink the horizontal
+            // components each tick (÷ ~1.118), causing speed to decay as 0.894^n ticks on slope.
             targetMotion.Y = ascending ? 0.5 : -0.5;
-            double len = Math.Sqrt(targetMotion.X * targetMotion.X + 0.25 + targetMotion.Z * targetMotion.Z);
-            if (len > 0) { targetMotion.X /= len; targetMotion.Z /= len; targetMotion.Y /= len; }
         }
 
         float speed = (float)GetSpeed();

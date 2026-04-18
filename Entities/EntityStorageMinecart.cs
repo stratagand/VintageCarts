@@ -123,10 +123,6 @@ public class EntityStorageMinecart : Entity
     public override void OnReceivedClientPacket(IServerPlayer player, int packetid, byte[] data)
     {
         storageInventory.InvNetworkUtil.HandleClientPacket(player, packetid, data);
-
-        // Ensure all viewers see the updated slot state.
-        for (int i = 0; i < storageInventory.Count; i++)
-            storageInventory[i].MarkDirty();
     }
 
     private void DestroyAndDrop(EntityAgent byEntity)
