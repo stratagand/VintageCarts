@@ -26,9 +26,13 @@ public class ItemRail : Item
 
         IWorldAccessor world = byEntity.World;
 
-        // The rail goes in the block adjacent to the clicked face.
-        Vec3i n = blockSel.Face.Normali;
-        BlockPos placePos = blockSel.Position.AddCopy(n.X, n.Y, n.Z);
+        // If the clicked block is itself replaceable (grass, plants, snow layers, etc.)
+        // place the rail there, replacing it — matching standard VS block-placement behaviour.
+        // Otherwise place in the block adjacent to the clicked face.
+        Block clickedBlock = world.BlockAccessor.GetBlock(blockSel.Position);
+        BlockPos placePos = clickedBlock.Replaceable >= 6000
+            ? blockSel.Position.Copy()
+            : blockSel.Position.AddCopy(blockSel.Face.Normali.X, blockSel.Face.Normali.Y, blockSel.Face.Normali.Z);
 
         // Do not place inside a solid or liquid block.
         if (world.BlockAccessor.GetBlock(placePos).Replaceable < 6000) return;
