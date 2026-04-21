@@ -39,3 +39,8 @@ C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\m
 C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\recipes\grid\minecart-storage.json
 C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\shapes\entity\minecart-lighted.json
 C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\shapes\entity\minecart-storage.json
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\entities\minecart-drill.json
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\itemtypes\minecart-drill.json
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\shapes\entity\minecart-drill.json
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\sounds\drill.ogg
+C:\Users\Russe\OneDrive\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\recipes\grid\minecart-drill.json

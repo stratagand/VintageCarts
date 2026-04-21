@@ -8,7 +8,7 @@
 	"textureSizes": {
 	},
 	"textures": {
-				"iron": "vintagecarts:block/iron",
+		"iron": "vintagecarts:block/iron",
 		"wood-generic": "vintagecarts:block/wood-generic",
 		"quartz": "game:block/quartz"
 	},

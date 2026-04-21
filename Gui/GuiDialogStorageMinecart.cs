@@ -42,8 +42,12 @@ public class GuiDialogStorageMinecart : GuiDialogGeneric
 
         int[] allSlots = Enumerable.Range(0, EntityStorageMinecart.StorageSlotCount).ToArray();
 
+        ElementBounds dialogBounds = ElementStdBounds.AutosizedMainDialog
+            .WithAlignment(EnumDialogArea.RightMiddle)
+            .WithFixedAlignmentOffset(-60, 0);
+
         SingleComposer = capi.Gui
-            .CreateCompo("vintagecarts-storage-" + _cart.EntityId, ElementStdBounds.AutosizedMainDialog)
+            .CreateCompo("vintagecarts-storage-" + _cart.EntityId, dialogBounds)
             .AddShadedDialogBG(bgBounds)
             .AddDialogTitleBar("Storage Cart", OnTitleBarClose)
             .BeginChildElements(bgBounds)

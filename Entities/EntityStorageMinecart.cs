@@ -69,6 +69,18 @@ public class EntityStorageMinecart : Entity
     /// <summary>Exposed for the GUI dialog to reference the inventory directly.</summary>
     public InventoryGeneric StorageInventory => storageInventory;
 
+    /// <summary>
+    /// Forces a full inventory sync to every online player who currently has this
+    /// cart's GUI open. Call this after any server-side slot modification so the
+    /// client display stays accurate without requiring the player to reopen the GUI.
+    /// </summary>
+    public void BroadcastInventoryUpdate()
+    {
+        if (Api is not ICoreServerAPI sapi) return;
+        foreach (IServerPlayer p in sapi.World.AllOnlinePlayers)
+            storageInventory.Open(p);
+    }
+
     public override void Initialize(EntityProperties properties, ICoreAPI api, long InChunkIndex3d)
     {
         base.Initialize(properties, api, InChunkIndex3d);

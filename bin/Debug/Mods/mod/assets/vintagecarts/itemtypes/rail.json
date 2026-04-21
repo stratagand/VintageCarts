@@ -32,11 +32,5 @@
     "requiredMiningTier": 0,
     "creativeInventory": {
         "VintageCarts": ["*"]
-    },
-    "sounds": {
-		"place": "game:block/planks",
-		"hit": "game:block/planks",
-		"break": "game:block/planks",
-		"walk": "game:walk/wood"
-	}
+    }
 }

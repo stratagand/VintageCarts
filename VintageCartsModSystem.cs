@@ -31,6 +31,7 @@ public class VintageCartsModSystem : ModSystem
         api.RegisterEntity("EntityMinecart", typeof(EntityMinecart));
         api.RegisterEntity("EntityLightedMinecart", typeof(EntityLightedMinecart));
         api.RegisterEntity("EntityStorageMinecart", typeof(EntityStorageMinecart));
+        api.RegisterEntity("EntityDrillMinecart", typeof(EntityDrillMinecart));
         api.RegisterItemClass("ItemMinecart", typeof(ItemMinecart));
         api.RegisterItemClass("ItemRail", typeof(ItemRail));
         api.RegisterItemClass("ItemStorageMinecart", typeof(ItemStorageMinecart));

@@ -21,7 +21,7 @@ public class EntityMinecart : Entity, IMountable
     private const double MovingAnimationSpeedThreshold = 0.01;
 
     private const float RiderYOffset = 0.35f;
-    private const double RailVisualTopOffset = 0.125;
+    private const double RailVisualTopOffset = 0.0625;
     private const double RampHeight = 1.0;
 
     private static readonly Dictionary<string, float> FuelValues = new()
@@ -367,14 +367,6 @@ public class EntityMinecart : Entity, IMountable
             travelDirection = exit;
         }
 
-        // Avoid snapping the rider's camera: keep yaw fixed while someone is mounted.
-        // We still align yaw when unmounted so parked carts face track direction.
-        if (!hasPassenger)
-        {
-            Pos.Yaw = FacingToYaw(exit);
-            ServerPos.Yaw = Pos.Yaw;
-        }
-
         Vec3d targetMotion = FacingToMotion(exit);
 
         if (isSlope)
@@ -467,6 +459,10 @@ public class EntityMinecart : Entity, IMountable
             newSpeed = speed;
         }
 
+        // Only update visual yaw when the cart is actually moving.
+        // Updating while stationary causes the direction logic to oscillate and
+        // produces constant jitter for idle carts and a snap when dismounting.
+
         // If track ends ahead, clamp movement to this rail's boundary and stop immediately.
         // Clamp checks use the active movement-facing direction, which is either
         // current momentum (straight reverse braking) or rail exit (corner reorient).
@@ -530,10 +526,15 @@ public class EntityMinecart : Entity, IMountable
 
         if (reachedRailEnd)
         {
-            newSpeed = 0;
-            travelDirection = null;
-            Pos.Motion.Set(0, 0, 0);
-            ServerPos.Motion.Set(0, 0, 0);
+            if (!OnReachedRailEnd(clampFacing, railPos))
+            {
+                newSpeed = 0;
+                travelDirection = null;
+                Pos.Motion.Set(0, 0, 0);
+                ServerPos.Motion.Set(0, 0, 0);
+            }
+            // When OnReachedRailEnd returns true the subclass handled the event;
+            // motion is left untouched so the cart continues on the next tick.
         }
         else
         {
@@ -658,8 +659,8 @@ public class EntityMinecart : Entity, IMountable
         ServerPos.X = x; ServerPos.Y = y; ServerPos.Z = z;
         Pos.Motion.X = mx; Pos.Motion.Z = mz;
         ServerPos.Motion.X = mx; ServerPos.Motion.Z = mz;
-        Pos.Yaw = yaw;
-        ServerPos.Yaw = yaw;
+        // Yaw is driven entirely by the visualYaw WatchedAttribute on the client,
+        // so we intentionally do not apply it here to avoid camera spin for the rider.
     }
 
     private void ApplyFriction(float dt)
@@ -1012,7 +1013,11 @@ public class EntityMinecart : Entity, IMountable
         return false;
     }
 
-    private static BlockPos OffsetPos(BlockPos pos, BlockFacing facing)
+    /// <summary>Called when the cart reaches the end of laid track.
+    /// Return true to suppress the default stop behaviour (subclass handled it).</summary>
+    protected virtual bool OnReachedRailEnd(BlockFacing travelFacing, BlockPos railPos) => false;
+
+    protected static BlockPos OffsetPos(BlockPos pos, BlockFacing facing)
     {
         if (facing == BlockFacing.NORTH) return pos.NorthCopy();
         if (facing == BlockFacing.SOUTH) return pos.SouthCopy();
