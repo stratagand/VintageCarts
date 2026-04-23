@@ -86,7 +86,7 @@ public class EntityStorageMinecart : Entity
         base.Initialize(properties, api, InChunkIndex3d);
         storageInventory = new InventoryGeneric(StorageSlotCount, "vintagecarts-storage-" + EntityId, api);
         Pos.Motion.Set(0, 0, 0);
-        ServerPos.Motion.Set(0, 0, 0);
+        Pos.Motion.Set(0, 0, 0);
     }
 
     public override void OnGameTick(float dt)
@@ -106,8 +106,8 @@ public class EntityStorageMinecart : Entity
         // Storage carts always have zero motion, so chained followers must climb the
         // leader chain to find the EntityMinecart that carries the real velocity.
         Entity motionSource = GetMotionSource();
-        double mx = motionSource.ServerPos.Motion.X;
-        double mz = motionSource.ServerPos.Motion.Z;
+        double mx = motionSource.Pos.Motion.X;
+        double mz = motionSource.Pos.Motion.Z;
         double horizSpeed = Math.Sqrt(mx * mx + mz * mz);
 
         double backX, backZ;
@@ -120,24 +120,24 @@ public class EntityStorageMinecart : Entity
         else
         {
             // Stationary: fall back to yaw. VS forward = (-sin, cos), so back = (sin, -cos).
-            backX = Math.Sin(leader.ServerPos.Yaw);
-            backZ = -Math.Cos(leader.ServerPos.Yaw);
+            backX = Math.Sin(leader.Pos.Yaw);
+            backZ = -Math.Cos(leader.Pos.Yaw);
         }
 
-        double targetX = leader.ServerPos.X + backX;
-        double targetY = leader.ServerPos.Y;
-        double targetZ = leader.ServerPos.Z + backZ;
+        double targetX = leader.Pos.X + backX;
+        double targetY = leader.Pos.Y;
+        double targetZ = leader.Pos.Z + backZ;
 
         Pos.SetPos(targetX, targetY, targetZ);
-        ServerPos.SetPos(targetX, targetY, targetZ);
-        Pos.Yaw = leader.ServerPos.Yaw;
-        ServerPos.Yaw = leader.ServerPos.Yaw;
+        Pos.SetPos(targetX, targetY, targetZ);
+        Pos.Yaw = leader.Pos.Yaw;
+        Pos.Yaw = leader.Pos.Yaw;
 
         // Keep motion zeroed: interpolateposition client behavior uses Pos.Motion for
         // lag-compensation extrapolation, which would overshoot since EntityMinecart uses
         // custom movement without interpolateposition. Pure position tracking is correct here.
         Pos.Motion.Set(0, 0, 0);
-        ServerPos.Motion.Set(0, 0, 0);
+        Pos.Motion.Set(0, 0, 0);
     }
 
     public override void OnInteract(EntityAgent byEntity, ItemSlot slot, Vec3d hitPosition, EnumInteractMode mode)

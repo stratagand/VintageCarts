@@ -58,7 +58,7 @@ public class EntityMinecart : Entity, IMountable
         fuelInventory = new InventoryGeneric(1, "vintagecarts-fuel-" + EntityId, api);
         fuelInventory.SlotModified += _ => { };
         Pos.Motion.Set(0, 0, 0);
-        ServerPos.Motion.Set(0, 0, 0);
+        Pos.Motion.Set(0, 0, 0);
     }
 
     public IMountableSeat[] Seats => _seats;
@@ -187,13 +187,13 @@ public class EntityMinecart : Entity, IMountable
             if (Math.Abs(Pos.Y - railSurfaceY) > 0.01)
             {
                 Pos.Y = railSurfaceY;
-                ServerPos.Y = railSurfaceY;
+                Pos.Y = railSurfaceY;
             }
 
             if (!railBlock.Code.Path.StartsWith("railslope"))
             {
                 Pos.Motion.Y = 0;
-                ServerPos.Motion.Y = 0;
+                Pos.Motion.Y = 0;
             }
             HandleRailMovement(railBlock, railPos!, dt);
         }
@@ -202,15 +202,15 @@ public class EntityMinecart : Entity, IMountable
             if (GetSpeed() > 0.001f)
             {
                 Pos.Motion.Set(0, 0, 0);
-                ServerPos.Motion.Set(0, 0, 0);
+                Pos.Motion.Set(0, 0, 0);
                 if (lastRailPos != null)
                 {
                     Pos.X = lastRailPos.X + 0.5;
                     Pos.Y = GetRailSurfaceY(World.BlockAccessor.GetBlock(lastRailPos), lastRailPos, Pos.X, Pos.Z);
                     Pos.Z = lastRailPos.Z + 0.5;
-                    ServerPos.X = Pos.X;
-                    ServerPos.Y = Pos.Y;
-                    ServerPos.Z = Pos.Z;
+                    Pos.X = Pos.X;
+                    Pos.Y = Pos.Y;
+                    Pos.Z = Pos.Z;
                 }
             }
             travelDirection = null;
@@ -531,7 +531,7 @@ public class EntityMinecart : Entity, IMountable
                 newSpeed = 0;
                 travelDirection = null;
                 Pos.Motion.Set(0, 0, 0);
-                ServerPos.Motion.Set(0, 0, 0);
+                Pos.Motion.Set(0, 0, 0);
             }
             // When OnReachedRailEnd returns true the subclass handled the event;
             // motion is left untouched so the cart continues on the next tick.
@@ -539,7 +539,7 @@ public class EntityMinecart : Entity, IMountable
         else
         {
             Pos.Motion.Set(appliedMotion.X * newSpeed, appliedMotion.Y * newSpeed, appliedMotion.Z * newSpeed);
-            ServerPos.Motion.Set(appliedMotion.X * newSpeed, appliedMotion.Y * newSpeed, appliedMotion.Z * newSpeed);
+            Pos.Motion.Set(appliedMotion.X * newSpeed, appliedMotion.Y * newSpeed, appliedMotion.Z * newSpeed);
         }
 
         // Snap to the lane implied by actual exit direction so dynamic branch exits
@@ -549,9 +549,9 @@ public class EntityMinecart : Entity, IMountable
         else if (movementFacing == BlockFacing.EAST || movementFacing == BlockFacing.WEST)
             Pos.Z = railPos.Z + 0.5;
 
-        ServerPos.X = Pos.X;
-        ServerPos.Y = Pos.Y;
-        ServerPos.Z = Pos.Z;
+        Pos.X = Pos.X;
+        Pos.Y = Pos.Y;
+        Pos.Z = Pos.Z;
 
         if (_seats[0].Passenger is EntityPlayer riderPlayer && Api is ICoreServerAPI sapi)
         {
@@ -656,9 +656,9 @@ public class EntityMinecart : Entity, IMountable
     public void ApplyClientPositionUpdate(double x, double y, double z, double mx, double mz, float yaw = 0)
     {
         Pos.X = x; Pos.Y = y; Pos.Z = z;
-        ServerPos.X = x; ServerPos.Y = y; ServerPos.Z = z;
+        Pos.X = x; Pos.Y = y; Pos.Z = z;
         Pos.Motion.X = mx; Pos.Motion.Z = mz;
-        ServerPos.Motion.X = mx; ServerPos.Motion.Z = mz;
+        Pos.Motion.X = mx; Pos.Motion.Z = mz;
         // Yaw is driven entirely by the visualYaw WatchedAttribute on the client,
         // so we intentionally do not apply it here to avoid camera spin for the rider.
     }
@@ -672,11 +672,11 @@ public class EntityMinecart : Entity, IMountable
             double scale = newSpeed / speed;
             Pos.Motion.X *= scale;
             Pos.Motion.Z *= scale;
-            ServerPos.Motion.X *= scale;
-            ServerPos.Motion.Z *= scale;
+            Pos.Motion.X *= scale;
+            Pos.Motion.Z *= scale;
         }
         Pos.Motion.Y = Math.Max(Pos.Motion.Y, -20);
-        ServerPos.Motion.Y = Math.Max(ServerPos.Motion.Y, -20);
+        Pos.Motion.Y = Math.Max(Pos.Motion.Y, -20);
     }
 
     private double GetSpeed()
@@ -1050,7 +1050,7 @@ public class EntityMinecart : Entity, IMountable
     public void StopMovementImmediately()
     {
         Pos.Motion.Set(0, 0, 0);
-        ServerPos.Motion.Set(0, 0, 0);
+        Pos.Motion.Set(0, 0, 0);
         travelDirection = null;
     }
 
@@ -1092,19 +1092,19 @@ public class EntityMinecart : Entity, IMountable
 
         Entity tail = FindChainTail();
 
-        double backX = Math.Sin(tail.ServerPos.Yaw);
-        double backZ = -Math.Cos(tail.ServerPos.Yaw);
+        double backX = Math.Sin(tail.Pos.Yaw);
+        double backZ = -Math.Cos(tail.Pos.Yaw);
         Vec3d spawnPos = new Vec3d(
-            tail.ServerPos.X + backX,
-            tail.ServerPos.Y,
-            tail.ServerPos.Z + backZ
+            tail.Pos.X + backX,
+            tail.Pos.Y,
+            tail.Pos.Z + backZ
         );
 
         EntityStorageMinecart newCart = (EntityStorageMinecart)World.ClassRegistry.CreateEntity(props);
-        newCart.ServerPos.SetPos(spawnPos);
         newCart.Pos.SetPos(spawnPos);
-        newCart.ServerPos.Yaw = tail.ServerPos.Yaw;
-        newCart.Pos.Yaw = tail.ServerPos.Yaw;
+        newCart.Pos.SetPos(spawnPos);
+        newCart.Pos.Yaw = tail.Pos.Yaw;
+        newCart.Pos.Yaw = tail.Pos.Yaw;
         newCart.LeaderId = tail.EntityId;
 
         World.SpawnEntity(newCart);

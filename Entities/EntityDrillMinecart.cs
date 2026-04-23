@@ -48,8 +48,8 @@ public class EntityDrillMinecart : EntityMinecart
             double scale = DrillMaxSpeed / speed;
             Pos.Motion.X = mx * scale;
             Pos.Motion.Z = mz * scale;
-            ServerPos.Motion.X = Pos.Motion.X;
-            ServerPos.Motion.Z = Pos.Motion.Z;
+            Pos.Motion.X = Pos.Motion.X;
+            Pos.Motion.Z = Pos.Motion.Z;
         }
     }
 

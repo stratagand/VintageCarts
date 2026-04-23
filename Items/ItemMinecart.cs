@@ -43,9 +43,9 @@ public class ItemMinecart : Item
 		if (props == null) return;
 
 		Entity entity = byEntity.World.ClassRegistry.CreateEntity(props);
-		entity.ServerPos.SetPos(spawnPos);
 		entity.Pos.SetPos(spawnPos);
-		entity.ServerPos.Motion.Set(0, 0, 0);
+		entity.Pos.SetPos(spawnPos);
+		entity.Pos.Motion.Set(0, 0, 0);
 		entity.Pos.Motion.Set(0, 0, 0);
 
 		// Align the cart visually with the rail it's being placed on.
@@ -59,7 +59,7 @@ public class ItemMinecart : Item
 						"se" or "ne" or "nw" or "sw" => 0f,     // Curve variants - default to South
 			_           => 0f                        // Default South
 		};
-		entity.ServerPos.Yaw = spawnYaw;
+		entity.Pos.Yaw = spawnYaw;
 		entity.Pos.Yaw = spawnYaw;
 
 		byEntity.World.SpawnEntity(entity);
