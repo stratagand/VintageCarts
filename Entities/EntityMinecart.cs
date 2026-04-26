@@ -43,6 +43,7 @@ public class EntityMinecart : Entity, IMountable
     private BlockFacing? travelDirection = null;
     private BlockPos? lastRailPos = null;
     private bool _isBeingDestroyed = false;
+    private bool _backwardHeld = false;
     private long _followerCartId = -1;
 
     public long FollowerCartId
@@ -119,6 +120,7 @@ public class EntityMinecart : Entity, IMountable
         base.OnGameTick(dt);
         if (Api.Side == EnumAppSide.Client)
         {
+            Pos.Yaw = WatchedAttributes.GetFloat("visualYaw", Pos.Yaw);
             UpdateRollingSound();
             UpdateMovingAnimation();
             return;
@@ -228,15 +230,17 @@ public class EntityMinecart : Entity, IMountable
 
         bool hasPassenger = _seats[0].Passenger != null;
         bool movingForward  = hasPassenger && _seats[0].Controls.Forward;
-        bool movingBackward = hasPassenger && (_seats[0].Controls.Backward || _seats[0].Controls.Sneak || _seats[0].Controls.Jump);
-        bool movingLeft = hasPassenger && _seats[0].Controls.Left;
+        bool movingBackward = hasPassenger && (_seats[0].Controls.Backward || _seats[0].Controls.Sneak);
+        bool movingLeft  = hasPassenger && _seats[0].Controls.Left;
         bool movingRight = hasPassenger && _seats[0].Controls.Right;
+        bool braking = hasPassenger && _seats[0].Controls.Jump;
+        bool backwardRisingEdge = movingBackward && !_backwardHeld;
+        _backwardHeld = movingBackward;
         bool hasDirectionalInput = movingForward || movingBackward || movingLeft || movingRight;
         bool stoppedAtJunctionForInput = travelDirection == null
             && GetSpeed() < 0.05
             && (orientation.StartsWith("t-") || orientation == "cross");
         bool forwardHasNoEffect = false;
-        bool backwardHasNoEffect = false;
         bool leftHasNoEffect = false;
         bool rightHasNoEffect = false;
 
@@ -262,18 +266,11 @@ public class EntityMinecart : Entity, IMountable
         }
         else if (movingBackward)
         {
-            if (stoppedAtJunctionForInput)
+            // On the first frame the key is pressed, flip orientation 180°.
+            // Subsequent ticks while held do nothing — wait for re-press to flip again.
+            if (backwardRisingEdge)
             {
-                // Let junction branch selection resolve from rider input without
-                // fabricating an entry direction when starting from rest.
-            }
-            else if (TryGetBackwardFacingDirection(orientation, out BlockFacing facingDirection))
-            {
-                travelDirection = facingDirection;
-            }
-            else
-            {
-                backwardHasNoEffect = true;
+                travelDirection = (travelDirection ?? DefaultFacingForOrientation(orientation)).Opposite;
             }
         }
         else if (movingLeft)
@@ -367,6 +364,12 @@ public class EntityMinecart : Entity, IMountable
             travelDirection = exit;
         }
 
+        // Always sync orientation to the current exit direction.
+        // The rider's view snapping on direction change is accepted behaviour.
+        float visualYaw = FacingToYaw(exit);
+        WatchedAttributes.SetFloat("visualYaw", visualYaw);
+        Pos.Yaw = visualYaw;
+
         Vec3d targetMotion = FacingToMotion(exit);
 
         if (isSlope)
@@ -385,7 +388,6 @@ public class EntityMinecart : Entity, IMountable
         float speed = (float)GetSpeed();
         float newSpeed;
         bool inputHasNoEffect = (movingForward && forwardHasNoEffect)
-            || (movingBackward && backwardHasNoEffect)
             || (movingLeft && leftHasNoEffect)
             || (movingRight && rightHasNoEffect);
 
@@ -404,6 +406,16 @@ public class EntityMinecart : Entity, IMountable
             // Entering a blocked side of a T with no input behaves like track end.
             newSpeed = 0;
             appliedMotion = new Vec3d(0, 0, 0);
+        }
+        else if (braking)
+        {
+            // Brake: decelerate at the same rate as forward acceleration, never reverse.
+            newSpeed = Math.Max(0, speed - Acceleration * dt);
+            if (speed > 0.0001f)
+            {
+                appliedMotion = new Vec3d(Pos.Motion.X / speed, 0, Pos.Motion.Z / speed);
+                movementFacing = DominantFacing();
+            }
         }
         else if (reversingInput)
         {
@@ -434,10 +446,6 @@ public class EntityMinecart : Entity, IMountable
         {
             // Preserve ability to brake even when the requested direction cannot
             // be resolved on the current rail piece.
-            newSpeed = Math.Max(0, speed - Acceleration * dt);
-        }
-        else if (movingBackward && backwardHasNoEffect)
-        {
             newSpeed = Math.Max(0, speed - Acceleration * dt);
         }
         else if (movingLeft && leftHasNoEffect)
