@@ -17,3 +17,4 @@ Still a bug where person inventory doesn't get properly updated.  When you click
 When you have a storage cart with items and you pick the cart up off the track, the items in the chest go *poof*
   * Had an issue where the drill cart got killed due to falling gravel debris with a lake right above.  Couldn't reconnect the storage cart without breaking the cart and putting it back down.
   * When breaking the storage cart that had HP missing, it regained full health when I put it back down
+  * If a storage cart gets destroyed, the items from the cart should either stay in the cart (like the CarryOn mod) or fall out of the cart and need to all be picked up
