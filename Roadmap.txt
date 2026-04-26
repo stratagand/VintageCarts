@@ -1,10 +1,15 @@
 Enhancements
-Support 3-way and 4-way crossings
-Support ability to change direction on train track (either by Cart driver or future signal)
-Additional light source for cart
-Allow cart to act as mobile chest
+Toggle button to turn drill on and off
+Increase complexity of drill cart blueprint
+Add a whistle to Minecart
+Have drill face the direction that the cart is moving in
+Consider an alternate resting drill speed
+HUD display for drill mode
+HUD display for # of rail
+
 
 Bugs to Fix
-If there's a gap of one space between the tracks and you place a track one block higher, it raises the ramp to angle up to the higher block.  When you delete the higher block, have it go back to the lower state.
-To place tracks downward, you need to have stairs to allow for the rail to do the proper height check.
-When placing tracks at a downward slope, when you reach the bottom for a horizontal track again, the track lays flat instead of placing an angled track to make the connection.  You need to delete the middle track and replace it to check the height check to trigger.
+In creative mode, change "tabname-VintageCarts" to "Vintage Carts"
+Update the 2D Minecart view to have the slightly more rounded wheels
+Minecart disappeared when it was on a block adjcent to a higher block rail.  Something in the rail check caused it to go *poof*
+Some debris started bouncing on the track causing damage to player and cart, in one instance the cart started moving the opposite direction all by itself (might be where my other missing cart went...)
