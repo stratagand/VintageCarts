@@ -14,4 +14,6 @@ Update the 2D Minecart view to have the slightly more rounded wheels
 Minecart disappeared when it was on a block adjcent to a higher block rail.  Something in the rail check caused it to go *poof*
 Some debris started bouncing on the track causing damage to player and cart, in one instance the cart started moving the opposite direction all by itself (might be where my other missing cart went...)
 Still a bug where person inventory doesn't get properly updated.  When you click on a slot, the stack of stuff appears
-
+When you have a storage cart with items and you pick the cart up off the track, the items in the chest go *poof*
+  * Had an issue where the drill cart got killed due to falling gravel debris with a lake right above.  Couldn't reconnect the storage cart without breaking the cart and putting it back down.
+  * When breaking the storage cart that had HP missing, it regained full health when I put it back down
