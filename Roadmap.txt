@@ -13,3 +13,5 @@ In creative mode, change "tabname-VintageCarts" to "Vintage Carts"
 Update the 2D Minecart view to have the slightly more rounded wheels
 Minecart disappeared when it was on a block adjcent to a higher block rail.  Something in the rail check caused it to go *poof*
 Some debris started bouncing on the track causing damage to player and cart, in one instance the cart started moving the opposite direction all by itself (might be where my other missing cart went...)
+Still a bug where person inventory doesn't get properly updated.  When you click on a slot, the stack of stuff appears
+
