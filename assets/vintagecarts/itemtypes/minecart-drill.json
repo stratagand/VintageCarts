@@ -14,7 +14,7 @@
     }
   },
   "guiTransform": {
-    "translation": { "x": -2, "y": -10, "z": 0 },
+    "translation": { "x": 4, "y": -7, "z": 0 },
     "rotation": { "x": 0, "y": 0, "z": 180 },
     "scale": 1.42
   },

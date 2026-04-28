@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Russe\\OneDrive\\Documents\\VintageStoryMods\\VintageCarts\\VintageCarts.csproj",
+      "projectUniqueName": "C:\\Users\\Russe\\Documents\\VintageStoryMods\\VintageCarts\\VintageCarts.csproj",
       "projectName": "VintageCarts",
-      "projectPath": "C:\\Users\\Russe\\OneDrive\\Documents\\VintageStoryMods\\VintageCarts\\VintageCarts.csproj",
+      "projectPath": "C:\\Users\\Russe\\Documents\\VintageStoryMods\\VintageCarts\\VintageCarts.csproj",
       "packagesPath": "C:\\Users\\Russe\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Russe\\OneDrive\\Documents\\VintageStoryMods\\VintageCarts\\obj\\",
+      "outputPath": "C:\\Users\\Russe\\Documents\\VintageStoryMods\\VintageCarts\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Russe\\AppData\\Roaming\\NuGet\\NuGet.Config"

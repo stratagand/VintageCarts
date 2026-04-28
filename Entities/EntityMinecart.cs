@@ -21,7 +21,7 @@ public class EntityMinecart : Entity, IMountable
     private const double MovingAnimationSpeedThreshold = 0.01;
 
     private const float RiderYOffset = 0.35f;
-    private const double RailVisualTopOffset = 0.0625;
+    private const double RailVisualTopOffset = 0.25;
     private const double RampHeight = 1.0;
 
     private static readonly Dictionary<string, float> FuelValues = new()
@@ -43,7 +43,6 @@ public class EntityMinecart : Entity, IMountable
     private BlockFacing? travelDirection = null;
     private BlockPos? lastRailPos = null;
     private bool _isBeingDestroyed = false;
-    private bool _backwardHeld = false;
     private long _followerCartId = -1;
 
     public long FollowerCartId
@@ -117,10 +116,14 @@ public class EntityMinecart : Entity, IMountable
 
     public override void OnGameTick(float dt)
     {
+        // Zero vertical motion before base physics runs to prevent gravity accumulation
+        // that causes the stationary-cart bounce (accumulated Y motion exceeds snap threshold).
+        if (Api.Side == EnumAppSide.Server)
+            Pos.Motion.Y = 0;
+
         base.OnGameTick(dt);
         if (Api.Side == EnumAppSide.Client)
         {
-            Pos.Yaw = WatchedAttributes.GetFloat("visualYaw", Pos.Yaw);
             UpdateRollingSound();
             UpdateMovingAnimation();
             return;
@@ -230,13 +233,10 @@ public class EntityMinecart : Entity, IMountable
 
         bool hasPassenger = _seats[0].Passenger != null;
         bool movingForward  = hasPassenger && _seats[0].Controls.Forward;
-        bool movingBackward = hasPassenger && (_seats[0].Controls.Backward || _seats[0].Controls.Sneak);
         bool movingLeft  = hasPassenger && _seats[0].Controls.Left;
         bool movingRight = hasPassenger && _seats[0].Controls.Right;
         bool braking = hasPassenger && _seats[0].Controls.Jump;
-        bool backwardRisingEdge = movingBackward && !_backwardHeld;
-        _backwardHeld = movingBackward;
-        bool hasDirectionalInput = movingForward || movingBackward || movingLeft || movingRight;
+        bool hasDirectionalInput = movingForward || movingLeft || movingRight;
         bool stoppedAtJunctionForInput = travelDirection == null
             && GetSpeed() < 0.05
             && (orientation.StartsWith("t-") || orientation == "cross");
@@ -244,7 +244,7 @@ public class EntityMinecart : Entity, IMountable
         bool leftHasNoEffect = false;
         bool rightHasNoEffect = false;
 
-        Api.Logger.Debug($"[Minecart {EntityId}] Passenger: {hasPassenger}, Forward: {movingForward}, Backward: {movingBackward}, Left: {movingLeft}, Right: {movingRight}");
+        Api.Logger.Debug($"[Minecart {EntityId}] Passenger: {hasPassenger}, Forward: {movingForward}, Left: {movingLeft}, Right: {movingRight}");
 
         // Forward uses rider facing: accelerate in the rail direction most aligned with view.
         // If exactly perpendicular to available rail directions, forward has no velocity effect.
@@ -262,15 +262,6 @@ public class EntityMinecart : Entity, IMountable
             else
             {
                 forwardHasNoEffect = true;
-            }
-        }
-        else if (movingBackward)
-        {
-            // On the first frame the key is pressed, flip orientation 180°.
-            // Subsequent ticks while held do nothing — wait for re-press to flip again.
-            if (backwardRisingEdge)
-            {
-                travelDirection = (travelDirection ?? DefaultFacingForOrientation(orientation)).Opposite;
             }
         }
         else if (movingLeft)
@@ -343,7 +334,7 @@ public class EntityMinecart : Entity, IMountable
         // At junctions (multiple possible continuations), let input choose the branch
         // that best matches rider facing.
         if (hasDirectionalInput
-            && TryGetJunctionPreferredExitForInput(railPos, orientation, entry, movingForward, movingBackward, movingLeft, movingRight, out BlockFacing preferredExit))
+            && TryGetJunctionPreferredExitForInput(railPos, orientation, entry, movingForward, false, movingLeft, movingRight, out BlockFacing preferredExit))
         {
             exit = preferredExit;
         }
@@ -363,12 +354,6 @@ public class EntityMinecart : Entity, IMountable
         {
             travelDirection = exit;
         }
-
-        // Always sync orientation to the current exit direction.
-        // The rider's view snapping on direction change is accepted behaviour.
-        float visualYaw = FacingToYaw(exit);
-        WatchedAttributes.SetFloat("visualYaw", visualYaw);
-        Pos.Yaw = visualYaw;
 
         Vec3d targetMotion = FacingToMotion(exit);
 
@@ -466,10 +451,6 @@ public class EntityMinecart : Entity, IMountable
             // (or rail-end clamping) changes the speed.
             newSpeed = speed;
         }
-
-        // Only update visual yaw when the cart is actually moving.
-        // Updating while stationary causes the direction logic to oscillate and
-        // produces constant jitter for idle carts and a snap when dismounting.
 
         // If track ends ahead, clamp movement to this rail's boundary and stop immediately.
         // Clamp checks use the active movement-facing direction, which is either
@@ -618,7 +599,7 @@ public class EntityMinecart : Entity, IMountable
                 ShouldLoop = true,
                 Position = new Vec3f((float)Pos.X, (float)Pos.Y, (float)Pos.Z),
                 DisposeOnFinish = false,
-                Volume = 0.8f
+                Volume = 0.2f
             });
         }
 

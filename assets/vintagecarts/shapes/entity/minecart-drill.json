@@ -1,5 +1,6 @@
 {
 	"editor": {
+		"collapsedPaths": "Root/Small iron lamp mounted on the south (front) wall of the cart2",
 		"allAngles": false,
 		"entityTextureMode": false
 	},
@@ -10,47 +11,49 @@
 	"textures": {
 		"iron": "vintagecarts:block/iron",
 		"wood-generic": "vintagecarts:block/wood-generic",
-		"quartz": "game:block/quartz"
+		"quartz": "game:block/quartz",
+		"button-off": "game:item/resource/nugget/cinnabar",
+		"button-on": "game:item/resource/nugget/malachite"
 	},
 	"elements": [
 		{
 			"name": "floor",
 			"from": [ 1.0, 0.0, 2.0 ],
-			"to": [ 12.0, 1.0, 14.0 ],
+			"to": [ 15.0, 1.0, 14.0 ],
 			"faces": {
-				"north": { "texture": "#wood-generic", "uv": [ 1.0, 0.0, 12.0, 1.0 ] },
+				"north": { "texture": "#wood-generic", "uv": [ 1.0, 0.0, 15.0, 1.0 ] },
 				"east": { "texture": "#wood-generic", "uv": [ 2.0, 0.0, 14.0, 1.0 ] },
-				"south": { "texture": "#wood-generic", "uv": [ 1.0, 0.0, 12.0, 1.0 ] },
+				"south": { "texture": "#wood-generic", "uv": [ 1.0, 0.0, 15.0, 1.0 ] },
 				"west": { "texture": "#wood-generic", "uv": [ 2.0, 0.0, 14.0, 1.0 ] },
-				"up": { "texture": "#wood-generic", "uv": [ 1.0, 2.0, 12.0, 14.0 ] },
-				"down": { "texture": "#wood-generic", "uv": [ 1.0, 2.0, 12.0, 14.0 ] }
+				"up": { "texture": "#wood-generic", "uv": [ 1.0, 2.0, 15.0, 14.0 ] },
+				"down": { "texture": "#wood-generic", "uv": [ 1.0, 2.0, 15.0, 14.0 ] }
 			}
 		},
 		{
 			"name": "wall-north",
 			"from": [ 1.0, 1.0, 2.0 ],
-			"to": [ 12.0, 8.0, 3.0 ],
+			"to": [ 15.0, 8.0, 3.0 ],
 			"faces": {
-				"north": { "texture": "#wood-generic", "uv": [ 1.0, 8.0, 12.0, 15.0 ], "windMode": [-1,-1,-1,-1] },
+				"north": { "texture": "#wood-generic", "uv": [ 1.0, 8.0, 15.0, 15.0 ], "windMode": [-1,-1,-1,-1] },
 				"east": { "texture": "#wood-generic", "uv": [ 2.0, 8.0, 3.0, 15.0 ], "windMode": [-1,-1,-1,-1] },
-				"south": { "texture": "#wood-generic", "uv": [ 1.0, 8.0, 12.0, 15.0 ] },
+				"south": { "texture": "#wood-generic", "uv": [ 1.0, 8.0, 15.0, 15.0 ] },
 				"west": { "texture": "#wood-generic", "uv": [ 2.0, 8.0, 3.0, 15.0 ] },
-				"up": { "texture": "#wood-generic", "uv": [ 1.0, 2.0, 12.0, 3.0 ], "windMode": [-1,-1,-1,-1] },
-				"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 11.0, 1.0 ], "enabled": false }
+				"up": { "texture": "#wood-generic", "uv": [ 1.0, 2.0, 15.0, 3.0 ], "windMode": [-1,-1,-1,-1] },
+				"down": { "texture": "#null", "uv": [ 0.0, 0.0, 14.0, 1.0 ], "enabled": false }
 			}
 		},
 		{
 			"name": "wall-south",
 			"from": [ 1.0, 1.0, 13.0 ],
-			"to": [ 12.0, 8.0, 14.0 ],
+			"to": [ 15.0, 8.0, 14.0 ],
 			"rotationOrigin": [ 0.0, 0.0, 1.0 ],
 			"faces": {
-				"north": { "texture": "#wood-generic", "uv": [ 1.0, 8.0, 12.0, 15.0 ] },
+				"north": { "texture": "#wood-generic", "uv": [ 1.0, 8.0, 15.0, 15.0 ] },
 				"east": { "texture": "#wood-generic", "uv": [ 12.0, 8.0, 13.0, 15.0 ], "windMode": [-1,-1,-1,-1] },
-				"south": { "texture": "#wood-generic", "uv": [ 1.0, 8.0, 12.0, 15.0 ], "windMode": [-1,-1,-1,-1] },
+				"south": { "texture": "#wood-generic", "uv": [ 1.0, 8.0, 15.0, 15.0 ], "windMode": [-1,-1,-1,-1] },
 				"west": { "texture": "#wood-generic", "uv": [ 12.0, 8.0, 13.0, 15.0 ] },
-				"up": { "texture": "#wood-generic", "uv": [ 1.0, 12.0, 12.0, 13.0 ], "windMode": [-1,-1,-1,-1] },
-				"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 11.0, 1.0 ], "enabled": false }
+				"up": { "texture": "#wood-generic", "uv": [ 1.0, 12.0, 15.0, 13.0 ], "windMode": [-1,-1,-1,-1] },
+				"down": { "texture": "#null", "uv": [ 0.0, 0.0, 14.0, 1.0 ], "enabled": false }
 			}
 		},
 		{
@@ -64,28 +67,28 @@
 				"south": { "texture": "#wood-generic", "uv": [ 1.0, 8.0, 2.0, 15.0 ] },
 				"west": { "texture": "#wood-generic", "uv": [ 4.0, 8.0, 14.0, 15.0 ], "windMode": [-1,-1,-1,-1] },
 				"up": { "texture": "#wood-generic", "uv": [ 1.0, 4.0, 2.0, 14.0 ], "windMode": [-1,-1,-1,-1] },
-				"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 10.0 ], "enabled": false }
+				"down": { "texture": "#null", "uv": [ 0.0, 0.0, 1.0, 10.0 ], "enabled": false }
 			}
 		},
 		{
 			"name": "wall-east",
-			"from": [ 11.0, 1.0, 3.0 ],
-			"to": [ 12.0, 8.0, 13.0 ],
-			"rotationOrigin": [ -2.0, 0.0, 2.0 ],
+			"from": [ 14.0, 1.0, 3.0 ],
+			"to": [ 15.0, 8.0, 13.0 ],
+			"rotationOrigin": [ 1.0, 0.0, -1.0 ],
 			"faces": {
 				"north": { "texture": "#wood-generic", "uv": [ 13.0, 8.0, 14.0, 15.0 ] },
 				"east": { "texture": "#wood-generic", "uv": [ 4.0, 8.0, 14.0, 15.0 ] },
 				"south": { "texture": "#wood-generic", "uv": [ 13.0, 8.0, 14.0, 15.0 ] },
 				"west": { "texture": "#wood-generic", "uv": [ 4.0, 8.0, 14.0, 15.0 ] },
 				"up": { "texture": "#wood-generic", "uv": [ 13.0, 4.0, 14.0, 14.0 ] },
-				"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 10.0 ], "enabled": false }
+				"down": { "texture": "#null", "uv": [ 0.0, 0.0, 1.0, 10.0 ], "enabled": false }
 			}
 		},
 		{
 			"name": "Drill",
-			"from": [ 12.0, 2.0, 7.0 ],
-			"to": [ 13.0, 4.0, 9.0 ],
-			"rotationOrigin": [ 12.0, 3.0, 8.0 ],
+			"from": [ 15.0, 2.0, 7.0 ],
+			"to": [ 16.0, 4.0, 9.0 ],
+			"rotationOrigin": [ 15.0, 3.0, 8.0 ],
 			"faces": {
 				"north": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 2.0 ] },
 				"east": { "texture": "#iron", "uv": [ 0.0, 0.0, 2.0, 2.0 ] },
@@ -191,75 +194,103 @@
 		},
 		{
 			"name": "Small iron lamp mounted on the south (front) wall of the cart",
-			"from": [ 12.0, 5.0, 7.0 ],
-			"to": [ 13.0, 7.0, 9.0 ],
-			"rotationOrigin": [ 6.0, 3.0, -7.0 ],
+			"from": [ 15.0, 5.0, 7.0 ],
+			"to": [ 15.5, 7.0, 9.0 ],
+			"rotationOrigin": [ 9.0, 3.0, -7.0 ],
 			"faces": {
 				"north": { "texture": "#quartz", "uv": [ 6.0, 2.0, 7.0, 3.0 ], "glow": 255, "autoUv": false },
 				"east": { "texture": "#quartz", "uv": [ 14.0, 2.0, 16.0, 4.0 ], "glow": 255 },
-				"south": { "texture": "#quartz", "uv": [ 6.0, 2.0, 7.0, 4.0 ], "glow": 255 },
+				"south": { "texture": "#quartz", "uv": [ 6.0, 2.0, 6.5, 4.0 ], "glow": 255 },
 				"west": { "texture": "#quartz", "uv": [ 14.0, 2.0, 16.0, 4.0 ], "glow": 255 },
-				"up": { "texture": "#quartz", "uv": [ 6.0, 0.0, 7.0, 2.0 ], "glow": 255 },
-				"down": { "texture": "#quartz", "uv": [ 6.0, 0.0, 7.0, 2.0 ], "glow": 255 }
+				"up": { "texture": "#quartz", "uv": [ 6.0, 0.0, 6.5, 2.0 ], "glow": 255 },
+				"down": { "texture": "#quartz", "uv": [ 6.0, 0.0, 6.5, 2.0 ], "glow": 255 }
 			},
 			"children": [
 				{
 					"name": "left-frame",
 					"from": [ 0.0, -1.0, 2.0 ],
-					"to": [ 1.0, 3.0, 3.0 ],
+					"to": [ 0.5, 3.0, 3.0 ],
 					"rotationOrigin": [ 0.0, -1.0, 2.0 ],
 					"faces": {
-						"north": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 4.0 ] },
+						"north": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 4.0 ] },
 						"east": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 4.0 ] },
-						"south": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 4.0 ] },
+						"south": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 4.0 ] },
 						"west": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 4.0 ] },
-						"up": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 1.0 ] },
-						"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 1.0 ] }
+						"up": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] },
+						"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] }
 					}
 				},
 				{
 					"name": "right-frame",
 					"from": [ 0.0, -1.0, -1.0 ],
-					"to": [ 1.0, 3.0, 0.0 ],
+					"to": [ 0.5, 3.0, 0.0 ],
 					"rotationOrigin": [ 0.0, -1.0, -1.0 ],
 					"faces": {
-						"north": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 4.0 ] },
+						"north": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 4.0 ] },
 						"east": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 4.0 ] },
-						"south": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 4.0 ] },
+						"south": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 4.0 ] },
 						"west": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 4.0 ] },
-						"up": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 1.0 ] },
-						"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 1.0 ] }
+						"up": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] },
+						"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] }
 					}
 				},
 				{
 					"name": "top-frame",
 					"from": [ 0.0, 2.0, 0.0 ],
-					"to": [ 1.0, 3.0, 2.0 ],
+					"to": [ 0.5, 3.0, 2.0 ],
 					"rotationOrigin": [ 0.0, 2.0, 0.0 ],
 					"faces": {
-						"north": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 1.0 ] },
+						"north": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] },
 						"east": { "texture": "#iron", "uv": [ 0.0, 0.0, 2.0, 1.0 ] },
-						"south": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 1.0 ] },
+						"south": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] },
 						"west": { "texture": "#iron", "uv": [ 0.0, 0.0, 2.0, 1.0 ] },
-						"up": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 2.0 ] },
-						"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 2.0 ] }
+						"up": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 2.0 ] },
+						"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 2.0 ] }
 					}
 				},
 				{
 					"name": "bottom-frame",
 					"from": [ 0.0, -1.0, 0.0 ],
-					"to": [ 1.0, 0.0, 2.0 ],
+					"to": [ 0.5, 0.0, 2.0 ],
 					"rotationOrigin": [ 0.0, -1.0, 0.0 ],
 					"faces": {
-						"north": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 1.0 ] },
+						"north": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] },
 						"east": { "texture": "#iron", "uv": [ 0.0, 0.0, 2.0, 1.0 ] },
-						"south": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 1.0 ] },
+						"south": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] },
 						"west": { "texture": "#iron", "uv": [ 0.0, 0.0, 2.0, 1.0 ] },
-						"up": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 2.0 ] },
-						"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 2.0 ] }
+						"up": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 2.0 ] },
+						"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 2.0 ] }
 					}
 				}
 			]
+		},
+		{
+			"name": "drill-button-off",
+			"from": [ 14.1, 8.0, 7.5 ],
+			"to": [ 15.1, 9.0, 8.5 ],
+			"rotationOrigin": [ 3.0, 0.0, 0.0 ],
+			"faces": {
+				"north": { "texture": "#button-off", "uv": [ 0.0, 0.0, 1.0, 1.0 ], "glow": 255 },
+				"east": { "texture": "#button-off", "uv": [ 0.0, 0.0, 1.0, 1.0 ], "glow": 255 },
+				"south": { "texture": "#button-off", "uv": [ 0.0, 0.0, 1.0, 1.0 ], "glow": 255 },
+				"west": { "texture": "#button-off", "uv": [ 0.0, 0.0, 1.0, 1.0 ], "glow": 255 },
+				"up": { "texture": "#button-off", "uv": [ 0.0, 0.0, 1.0, 1.0 ], "glow": 255 },
+				"down": { "texture": "#button-off", "uv": [ 0.0, 0.0, 1.0, 1.0 ], "glow": 255 }
+			}
+		},
+		{
+			"name": "drill-button-on",
+			"from": [ 14.1, 7.0, 7.5 ],
+			"to": [ 15.1, 8.0, 8.5 ],
+			"rotationOrigin": [ 3.0, -2.0, 0.0 ],
+			"faces": {
+				"north": { "texture": "#button-on", "uv": [ 0.0, 0.0, 1.0, 1.0 ], "glow": 255 },
+				"east": { "texture": "#button-on", "uv": [ 0.0, 0.0, 1.0, 1.0 ], "glow": 255 },
+				"south": { "texture": "#button-on", "uv": [ 0.0, 0.0, 1.0, 1.0 ], "glow": 255 },
+				"west": { "texture": "#button-on", "uv": [ 0.0, 0.0, 1.0, 1.0 ], "glow": 255 },
+				"up": { "texture": "#button-on", "uv": [ 0.0, 0.0, 1.0, 1.0 ], "glow": 255 },
+				"down": { "texture": "#button-on", "uv": [ 0.0, 0.0, 1.0, 1.0 ], "glow": 255 }
+			}
 		},
 		{
 			"name": "wheel-fl",
@@ -407,9 +438,9 @@
 		},
 		{
 			"name": "wheel-fr",
-			"from": [ 9.0, -1.0, 1.0 ],
-			"to": [ 11.0, 1.0, 2.0 ],
-			"rotationOrigin": [ 10.0, 0.0, 2.0 ],
+			"from": [ 12.0, -1.0, 1.0 ],
+			"to": [ 14.0, 1.0, 2.0 ],
+			"rotationOrigin": [ 13.0, 0.0, 2.0 ],
 			"faces": {
 				"north": { "texture": "#iron", "uv": [ 1.0, 0.0, 3.0, 2.0 ] },
 				"east": { "texture": "#iron", "uv": [ 2.0, 0.0, 3.0, 2.0 ], "windMode": [-1,-1,-1,-1] },
@@ -479,9 +510,9 @@
 		},
 		{
 			"name": "wheel-br",
-			"from": [ 9.0, -1.0, 14.0 ],
-			"to": [ 11.0, 1.0, 15.0 ],
-			"rotationOrigin": [ 10.0, 0.0, 15.0 ],
+			"from": [ 12.0, -1.0, 14.0 ],
+			"to": [ 14.0, 1.0, 15.0 ],
+			"rotationOrigin": [ 13.0, 0.0, 15.0 ],
 			"faces": {
 				"north": { "texture": "#iron", "uv": [ 1.0, 0.0, 3.0, 2.0 ] },
 				"east": { "texture": "#iron", "uv": [ 2.0, 0.0, 3.0, 2.0 ], "windMode": [-1,-1,-1,-1] },
@@ -548,9 +579,105 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "Small iron lamp mounted on the north (back) wall of the cart2",
+			"from": [ 0.5, 5.0, 7.0 ],
+			"to": [ 1.0, 7.0, 9.0 ],
+			"rotationOrigin": [ -6.0, 3.0, -7.0 ],
+			"faces": {
+				"north": { "texture": "#quartz", "uv": [ 6.0, 2.0, 7.0, 3.0 ], "glow": 255, "autoUv": false },
+				"east": { "texture": "#quartz", "uv": [ 14.0, 2.0, 16.0, 4.0 ], "glow": 255 },
+				"south": { "texture": "#quartz", "uv": [ 6.0, 2.0, 6.5, 4.0 ], "glow": 255 },
+				"west": { "texture": "#quartz", "uv": [ 14.0, 2.0, 16.0, 4.0 ], "glow": 255 },
+				"up": { "texture": "#quartz", "uv": [ 6.0, 0.0, 6.5, 2.0 ], "glow": 255 },
+				"down": { "texture": "#quartz", "uv": [ 6.0, 0.0, 6.5, 2.0 ], "glow": 255 }
+			},
+			"children": [
+				{
+					"name": "left-frame2",
+					"from": [ 0.0, -1.0, 2.0 ],
+					"to": [ 0.5, 3.0, 3.0 ],
+					"rotationOrigin": [ 0.0, -1.0, 2.0 ],
+					"faces": {
+						"north": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 4.0 ] },
+						"east": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 4.0 ] },
+						"south": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 4.0 ] },
+						"west": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 4.0 ] },
+						"up": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] },
+						"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] }
+					}
+				},
+				{
+					"name": "right-frame2",
+					"from": [ 0.0, -1.0, -1.0 ],
+					"to": [ 0.5, 3.0, 0.0 ],
+					"rotationOrigin": [ 0.0, -1.0, -1.0 ],
+					"faces": {
+						"north": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 4.0 ] },
+						"east": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 4.0 ] },
+						"south": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 4.0 ] },
+						"west": { "texture": "#iron", "uv": [ 0.0, 0.0, 1.0, 4.0 ] },
+						"up": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] },
+						"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] }
+					}
+				},
+				{
+					"name": "top-frame2",
+					"from": [ 0.0, 2.0, 0.0 ],
+					"to": [ 0.5, 3.0, 2.0 ],
+					"rotationOrigin": [ 0.0, 2.0, 0.0 ],
+					"faces": {
+						"north": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] },
+						"east": { "texture": "#iron", "uv": [ 0.0, 0.0, 2.0, 1.0 ] },
+						"south": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] },
+						"west": { "texture": "#iron", "uv": [ 0.0, 0.0, 2.0, 1.0 ] },
+						"up": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 2.0 ] },
+						"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 2.0 ] }
+					}
+				},
+				{
+					"name": "bottom-frame2",
+					"from": [ 0.0, -1.0, 0.0 ],
+					"to": [ 0.5, 0.0, 2.0 ],
+					"rotationOrigin": [ 0.0, -1.0, 0.0 ],
+					"faces": {
+						"north": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] },
+						"east": { "texture": "#iron", "uv": [ 0.0, 0.0, 2.0, 1.0 ] },
+						"south": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 1.0 ] },
+						"west": { "texture": "#iron", "uv": [ 0.0, 0.0, 2.0, 1.0 ] },
+						"up": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 2.0 ] },
+						"down": { "texture": "#iron", "uv": [ 0.0, 0.0, 0.5, 2.0 ] }
+					}
+				}
+			]
 		}
 	],
 	"animations": [
+		{
+			"name": "DrillActivate",
+			"code": "drillactivate",
+			"quantityframes": 10,
+			"onActivityStopped": "Stop",
+			"onAnimationEnd": "Hold",
+			"keyframes": [
+				{
+					"frame": 0,
+					"elements": {
+						"drill-button-off": { "offsetX": 0.0, "offsetY": 0.0, "offsetZ": 0.0, "rotationX": 0.0, "rotationY": 0.0, "rotationZ": 0.0 }
+					}
+				},
+				{
+					"frame": 5,
+					"elements": {
+						"drill-button-off": { "offsetX": 0.0, "offsetY": -1.0, "offsetZ": 0.0 },
+						"drill-button-on": { "offsetX": 0.0, "offsetY": 1.0, "offsetZ": 0.0 },
+						"Small iron lamp mounted on the south (front) wall of the cart": { "offsetX": 0.0, "offsetY": 0.0, "offsetZ": 0.0 }
+					}
+				}
+			]
+		},
+
 		{
 			"name": "Moving",
 			"code": "moving",
@@ -601,6 +728,46 @@
 						"wheel-fr": { "rotationX": 0.0, "rotationY": 0.0, "rotationZ": 180.0 },
 						"wheel-bl": { "rotationX": 0.0, "rotationY": 0.0, "rotationZ": 180.0 },
 						"wheel-fl": { "rotationX": 0.0, "rotationY": 0.0, "rotationZ": 180.0 }
+					}
+				}
+			]
+		},
+
+		{
+			"name": "Drilling",
+			"code": "drilling",
+			"quantityframes": 19,
+			"onActivityStopped": "EaseOut",
+			"onAnimationEnd": "Repeat",
+			"keyframes": [
+				{
+					"frame": 0,
+					"elements": {
+						"Drill": { "rotationX": -180.0, "rotationY": 0.0, "rotationZ": 0.0 }
+					}
+				},
+				{
+					"frame": 4,
+					"elements": {
+						"Drill": { "rotationX": -90.0, "rotationY": 0.0, "rotationZ": 0.0 }
+					}
+				},
+				{
+					"frame": 9,
+					"elements": {
+						"Drill": { "rotationX": 0.0, "rotationY": 0.0, "rotationZ": 0.0 }
+					}
+				},
+				{
+					"frame": 14,
+					"elements": {
+						"Drill": { "rotationX": 90.0, "rotationY": 0.0, "rotationZ": 0.0 }
+					}
+				},
+				{
+					"frame": 18,
+					"elements": {
+						"Drill": { "offsetX": 0.0, "offsetY": 0.0, "offsetZ": 0.0, "rotationX": 180.0, "rotationY": 0.0, "rotationZ": 0.0 }
 					}
 				}
 			]

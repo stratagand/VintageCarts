@@ -9,34 +9,107 @@ using VintageCarts.Blocks;
 namespace VintageCarts.Entities;
 
 /// <summary>
-/// A minecart that automatically drills through soft terrain and lays rail
-/// when it reaches the end of an existing track. It breaks the block directly
-/// ahead and the block above it, then places a new rail section so travel
-/// continues uninterrupted on the next tick.
-///
-/// Only soft materials (soil, gravel, sand, snow, leaves, wood, plants) are
-/// drillable. Stone, ore, metal, liquid, ice, and existing rails are not.
+/// A minecart that can optionally drill through soft terrain and lay rail.
+/// Right-clicking the red/green toggle button on the east face activates or
+/// deactivates drill mode. While active the speed is capped to DrillMaxSpeed
+/// and the cart breaks blocks and places rail at the track end.
 /// </summary>
 public class EntityDrillMinecart : EntityMinecart
 {
-    private static readonly AssetLocation SoundDrill = new("vintagecarts:sounds/drill");
+    public override byte[] LightHsv => new byte[] { 10, 6, 22 };
 
-    // Set to true by OnReachedRailEnd during this server tick; cleared before each tick.
-    private bool _isDrillingThisTick;
+    private static readonly AssetLocation SoundDrill = new("vintagecarts:sounds/drill");
+    private const float DrillMaxSpeed = 1.5f;
+
+    private bool _lastDrillActive;
+    private ILoadedSound? _drillSound;
 
     protected override AssetLocation DropItemLocation =>
         new AssetLocation("vintagecarts:minecart-drill");
 
-    // Walking-pace cap applied after a drill tick so the cart can't race through terrain.
-    private const float DrillMaxSpeed = 1.5f;
+    public bool DrillActive
+    {
+        get => WatchedAttributes.GetBool("drillActive", false);
+        private set => WatchedAttributes.SetBool("drillActive", value);
+    }
 
     public override void OnGameTick(float dt)
     {
-        _isDrillingThisTick = false;
-        base.OnGameTick(dt); // may set _isDrillingThisTick = true via OnReachedRailEnd
+        base.OnGameTick(dt);
 
-        if (Api.Side == EnumAppSide.Server && _isDrillingThisTick)
-            ClampMotionToDrillSpeed();
+        if (Api.Side == EnumAppSide.Server)
+        {
+            if (DrillActive && !AnyMounted())
+                DrillActive = false;
+
+            if (DrillActive)
+                ClampMotionToDrillSpeed();
+        }
+
+        if (Api.Side == EnumAppSide.Client)
+        {
+            SyncDrillAnimation();
+            UpdateDrillSound();
+        }
+    }
+
+    private void UpdateDrillSound()
+    {
+        if (Api is not ICoreClientAPI capi) return;
+
+        if (_drillSound == null)
+        {
+            _drillSound = capi.World.LoadSound(new SoundParams
+            {
+                Location = SoundDrill,
+                ShouldLoop = true,
+                Position = new Vec3f((float)Pos.X, (float)Pos.Y, (float)Pos.Z),
+                DisposeOnFinish = false,
+                Volume = 1.0f
+            });
+        }
+
+        if (DrillActive)
+        {
+            _drillSound.Params.Position = new Vec3f((float)Pos.X, (float)Pos.Y, (float)Pos.Z);
+            if (!_drillSound.IsPlaying)
+                _drillSound.Start();
+        }
+        else
+        {
+            if (_drillSound.IsPlaying)
+                _drillSound.Stop();
+        }
+    }
+
+    private void SyncDrillAnimation()
+    {
+        if (AnimManager == null) return;
+        bool active = DrillActive;
+        if (active == _lastDrillActive) return;
+        _lastDrillActive = active;
+
+        if (active)
+        {
+            AnimManager.StartAnimation(new AnimationMetaData
+            {
+                Animation = "DrillActivate",
+                Code = "drillactivate",
+                AnimationSpeed = 50f
+            });
+            AnimManager.StartAnimation(new AnimationMetaData
+            {
+                Animation = "drilling",
+                Code = "drilling",
+                EaseInSpeed = 5f,
+                EaseOutSpeed = 5f
+            });
+        }
+        else
+        {
+            AnimManager.StopAnimation("drillactivate");
+            AnimManager.StopAnimation("drilling");
+        }
     }
 
     private void ClampMotionToDrillSpeed()
@@ -48,13 +121,34 @@ public class EntityDrillMinecart : EntityMinecart
             double scale = DrillMaxSpeed / speed;
             Pos.Motion.X = mx * scale;
             Pos.Motion.Z = mz * scale;
-            Pos.Motion.X = Pos.Motion.X;
-            Pos.Motion.Z = Pos.Motion.Z;
         }
+    }
+
+    public override void OnInteract(EntityAgent byEntity, ItemSlot slot, Vec3d hitPosition, EnumInteractMode mode)
+    {
+        if (Api.Side != EnumAppSide.Server) return;
+
+        // Sneak + right-click toggles drill mode (drill carts have no fuel GUI).
+        if (mode == EnumInteractMode.Interact && byEntity.Controls.Sneak)
+        {
+            DrillActive = !DrillActive;
+            if (byEntity is EntityPlayer ep && Api is ICoreServerAPI sapi2
+                && sapi2.World.PlayerByUid(ep.PlayerUID) is IServerPlayer sp)
+            {
+                sp.SendMessage(0,
+                    DrillActive ? "Drill Minecart: Drill mode ON" : "Drill Minecart: Drill mode OFF",
+                    EnumChatType.Notification);
+            }
+            return;
+        }
+
+        base.OnInteract(byEntity, slot, hitPosition, mode);
     }
 
     protected override bool OnReachedRailEnd(BlockFacing travelFacing, BlockPos railPos)
     {
+        if (!DrillActive) return false;
+
         BlockPos frontPos = OffsetPos(railPos, travelFacing);
         BlockPos abovePos = frontPos.UpCopy();
 
@@ -64,18 +158,14 @@ public class EntityDrillMinecart : EntityMinecart
         if (!CanDrill(frontBlock, frontPos) || !CanDrill(aboveBlock, abovePos))
             return false;
 
-        // Require a rail item from the rider's inventory before proceeding.
         if (!TryConsumeRailFromPlayer())
             return false;
 
-        // Break above first so gravel/sand above does not fall into the
-        // freshly cleared front position before the rail is placed.
         if (aboveBlock.Id != 0)
             World.BlockAccessor.BreakBlock(abovePos, null);
         if (frontBlock.Id != 0)
             World.BlockAccessor.BreakBlock(frontPos, null);
 
-        // Place the best-fitting rail variant at the cleared position.
         Block seed = World.BlockAccessor.GetBlock(new AssetLocation("vintagecarts:rail-flat_ns"));
         if (seed is BlockRail railBlock)
         {
@@ -88,19 +178,12 @@ public class EntityDrillMinecart : EntityMinecart
             }
         }
 
-        // Play sound server-side; VS replicates to nearby clients automatically.
         World.PlaySoundAt(SoundDrill, Pos.X, Pos.Y, Pos.Z, null, randomizePitch: false);
-
-        _isDrillingThisTick = true;
-        return true; // suppress default stop; cart continues on the next tick
+        return true;
     }
 
     private static readonly AssetLocation RailItemCode = new("vintagecarts:rail");
 
-    /// <summary>
-    /// Finds a rail item in the rider's inventory, removes one, and returns true.
-    /// Returns false and notifies the rider if no rails are available.
-    /// </summary>
     private bool TryConsumeRailFromPlayer()
     {
         if (Controller is not EntityPlayer rider) return false;
@@ -112,11 +195,11 @@ public class EntityDrillMinecart : EntityMinecart
 
             for (int i = 0; i < inv.Count; i++)
             {
-                ItemSlot slot = inv[i];
-                if (slot.Itemstack?.Collectible?.Code?.Equals(RailItemCode) == true)
+                ItemSlot invSlot = inv[i];
+                if (invSlot.Itemstack?.Collectible?.Code?.Equals(RailItemCode) == true)
                 {
-                    slot.TakeOut(1);
-                    slot.MarkDirty();
+                    invSlot.TakeOut(1);
+                    invSlot.MarkDirty();
                     return true;
                 }
             }
@@ -132,29 +215,25 @@ public class EntityDrillMinecart : EntityMinecart
         if (Controller is not EntityPlayer rider) return;
         if (sapi.World.PlayerByUid(rider.PlayerUID) is not IServerPlayer serverPlayer) return;
 
-        serverPlayer.SendMessage(
-            0, // GeneralChatGroup
+        serverPlayer.SendMessage(0,
             "No Minecart Rails in your inventory for the Drill Minecart to place.",
             EnumChatType.Notification);
     }
 
     public override void OnEntityDespawn(EntityDespawnData despawn)
     {
+        _drillSound?.Stop();
+        _drillSound?.Dispose();
+        _drillSound = null;
         base.OnEntityDespawn(despawn);
     }
 
     private bool CanDrill(Block block, BlockPos pos)
     {
-        // Air needs no breaking — always fine to place rail here.
         if (block.Id == 0) return true;
-
-        // Never destroy existing track.
         if (block is BlockRail) return false;
-
-        // Never break indestructible blocks (bedrock, barrier blocks, etc.).
         if (block.Resistance < 0) return false;
 
-        // Never break blocks in a protected/claimed area.
         if (World is IServerWorldAccessor serverWorld)
         {
             var claims = serverWorld.Claims.Get(pos);

@@ -10,7 +10,7 @@ namespace VintageCarts.Items;
 /// </summary>
 public class ItemMinecart : Item
 {
-	private const double RailVisualTopOffset = 0.125;
+	private const double RailVisualTopOffset = 0.1875;
 
 	public override void OnHeldInteractStart(ItemSlot itemslot, EntityAgent byEntity,
 		BlockSelection blockSel, EntitySelection entitySel, bool firstEvent,

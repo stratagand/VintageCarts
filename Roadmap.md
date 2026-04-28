@@ -1,5 +1,5 @@
 *** Enhancements
-1) Add minecart braking
+1) Add minecart braking - done
 2) Add direction swapping for the minecart with s
 3) Make recipe for Drill Minecart much more advanced
 4) 

@@ -1,123 +1,32 @@
 [
   {
-    "ingredientPattern": "ML, I",
-    "ingredients": {
-      "M": {
-        "type": "item",
-        "code": "vintagecarts:minecart"
-      },
-      "L": {
-        "type": "block",
-        "code": "game:lantern-up",
-        "name": "material",
-        "attributes": {
-          "material": "copper",
-          "lining": "plain",
-          "glass": "quartz"
-        }
-      },
-    "I": { "type": "item", "code": "game:ingot-*", "name": "metal", "allowedVariants": ["iron"] }
-    },
-    "width": 2,
-    "height": 2,
-    "output": {
-      "type": "item",
-      "code": "vintagecarts:minecart-drill",
-      "quantity": 1
-    }
-  },
-    {
-    "ingredientPattern": "ML, I",
-    "ingredients": {
-      "M": {
-        "type": "item",
-        "code": "vintagecarts:minecart"
-      },
-      "L": {
-        "type": "block",
-        "code": "game:lantern-up",
-        "name": "material",
-        "attributes": {
-          "material": "bismuthbronze",
-          "lining": "plain",
-          "glass": "quartz"
-        }
-      },
-    "I": { "type": "item", "code": "game:ingot-*", "name": "metal", "allowedVariants": ["iron"] }
-    },
-    "width": 2,
-    "height": 2,
-    "output": {
-      "type": "item",
-      "code": "vintagecarts:minecart-drill",
-      "quantity": 1
-    }
-  },
-    {
-    "ingredientPattern": "ML, I",
-    "ingredients": {
-      "M": {
-        "type": "item",
-        "code": "vintagecarts:minecart"
-      },
-      "L": {
-        "type": "block",
-        "code": "game:lantern-up",
-        "name": "material",
-        "attributes": {
-          "material": "tinbronze",
-          "lining": "plain",
-          "glass": "quartz"
-        }
-      },
-    "I": { "type": "item", "code": "game:ingot-*", "name": "metal", "allowedVariants": ["iron"] }
-    },
-    "width": 2,
-    "height": 2,
-    "output": {
-      "type": "item",
-      "code": "vintagecarts:minecart-drill",
-      "quantity": 1
-    }
-  },
-    {
-    "ingredientPattern": "ML, I",
-    "ingredients": {
-      "M": {
-        "type": "item",
-        "code": "vintagecarts:minecart"
-      },
-      "L": {
-        "type": "block",
-        "code": "game:lantern-up",
-        "name": "material",
-        "attributes": {
-          "material": "blackbronze",
-          "lining": "plain",
-          "glass": "quartz"
-        }
-      },
-    "I": { "type": "item", "code": "game:ingot-*", "name": "metal", "allowedVariants": ["iron"] }
-    },
-    "width": 2,
-    "height": 2,
-    "output": {
-      "type": "item",
-      "code": "vintagecarts:minecart-drill",
-      "quantity": 1
-    }
-  },
-      {
-    "ingredientPattern": "MI",
+    "ingredientPattern": "MDL,ES_",
     "ingredients": {
       "M": {
         "type": "item",
         "code": "vintagecarts:minecart-lighted"
       },
-    "I": { "type": "item", "code": "game:ingot-*", "name": "metal", "allowedVariants": ["iron"] }
+      "S": {
+        "type": "item",
+        "code": "game:jonasframes-spring01"
+      },
+      "L": {
+        "type": "item",
+        "code": "game:ingot-steel"
+      },
+      "E": {
+        "type": "item",
+        "code": "game:metalplate-*",
+        "name": "metal",
+        "allowedVariants": ["electrum"]
+      },
+      "D": {
+        "type": "item",
+        "code": "game:jonasframes-gears01"
+      }
     },
-    "width": 2,
-    "height": 1,
+    "width": 3,
+    "height": 2,
     "output": {
       "type": "item",
       "code": "vintagecarts:minecart-drill",
