@@ -41,6 +41,7 @@ public class EntityMinecart : Entity, IMountable
     private bool movingAnimationActive = false;
 
     private BlockFacing? travelDirection = null;
+    private BlockFacing? _backwardTarget = null;
     private BlockPos? lastRailPos = null;
     private bool _isBeingDestroyed = false;
     private long _followerCartId = -1;
@@ -130,12 +131,97 @@ public class EntityMinecart : Entity, IMountable
         }
 
         BlockPos entityBlockPos = Pos.AsBlockPos;
+        var (railBlock, railPos) = FindClosestRail(entityBlockPos);
 
+        if (railBlock != null)
+        {
+            // Sub-step so the cart never jumps more than ~0.8 blocks per step.
+            // Without this, high-speed carts overshoot slope transition blocks in a
+            // single tick: the slope (1 Y-level up) is never found by the detector,
+            // the flat rail behind eventually exceeds the fallback radius, and the
+            // cart stops abruptly 1-2 blocks up the slope.
+            const float maxDistPerSubStep = 0.8f;
+            float remainingDt = dt;
+            while (remainingDt > 1e-4f)
+            {
+                lastRailPos = railPos!.Copy();
+                double railSurfaceY = GetRailSurfaceY(railBlock, railPos!, Pos.X, Pos.Z);
+                if (Math.Abs(Pos.Y - railSurfaceY) > 0.01)
+                {
+                    Pos.Y = railSurfaceY;
+                    Pos.Y = railSurfaceY;
+                }
+                if (!railBlock.Code.Path.StartsWith("railslope"))
+                {
+                    Pos.Motion.Y = 0;
+                    Pos.Motion.Y = 0;
+                }
+
+                float curSpeed = (float)GetSpeed();
+                float subDt = curSpeed > 0.001f
+                    ? Math.Min(remainingDt, maxDistPerSubStep / curSpeed)
+                    : remainingDt;
+
+                HandleRailMovement(railBlock, railPos!, subDt);
+                remainingDt -= subDt;
+
+                if (remainingDt <= 1e-4f) break;
+
+                var (nextBlock, nextPos) = FindClosestRail(Pos.AsBlockPos);
+                if (nextBlock == null) break;
+                railBlock = nextBlock;
+                railPos = nextPos;
+            }
+
+            if (_seats[0].Passenger is EntityPlayer riderPlayer && Api is ICoreServerAPI sapi)
+            {
+                sapi.Network.GetChannel(VintageCartsModSystem.ChannelName)
+                    .SendPacket(new CartPositionPacket
+                    {
+                        EntityId = EntityId,
+                        X = Pos.X, Y = Pos.Y, Z = Pos.Z,
+                        MotionX = Pos.Motion.X, MotionZ = Pos.Motion.Z,
+                        Yaw = Pos.Yaw
+                    }, (IServerPlayer)riderPlayer.Player);
+            }
+
+        }
+        else
+        {
+            if (GetSpeed() > 0.001f)
+            {
+                Pos.Motion.Set(0, 0, 0);
+                Pos.Motion.Set(0, 0, 0);
+                if (lastRailPos != null)
+                {
+                    Pos.X = lastRailPos.X + 0.5;
+                    Pos.Y = GetRailSurfaceY(World.BlockAccessor.GetBlock(lastRailPos), lastRailPos, Pos.X, Pos.Z);
+                    Pos.Z = lastRailPos.Z + 0.5;
+                    Pos.X = Pos.X;
+                    Pos.Y = Pos.Y;
+                    Pos.Z = Pos.Z;
+                }
+            }
+            travelDirection = null;
+            Block blockAt = World.BlockAccessor.GetBlock(entityBlockPos);
+            Block blockBelow = World.BlockAccessor.GetBlock(entityBlockPos.DownCopy());
+        }
+    }
+
+    /// <summary>
+    /// Finds the nearest rail block to the cart's current position.
+    /// Searches 2 blocks above and 5 below so slope rails (placed 1 Y-level above
+    /// the flat approach) are included in the candidate set.
+    /// Y-distance is zeroed for ascending slope candidates above the cart so that
+    /// horizontal proximity, not the 1-block climb gap, determines the winner.
+    /// </summary>
+    private (Block? railBlock, BlockPos? railPos) FindClosestRail(BlockPos entityBlockPos)
+    {
         Block? railBlock = null;
         BlockPos? railPos = null;
         double bestDistSq = double.MaxValue;
 
-        for (int yOffset = 0; yOffset >= -5; yOffset--)
+        for (int yOffset = 2; yOffset >= -5; yOffset--)
         {
             for (int dx = -2; dx <= 2; dx++)
             {
@@ -153,7 +239,12 @@ public class EntityMinecart : Entity, IMountable
                     double cy = GetRailSurfaceY(blockAtPos, checkPos, Pos.X, Pos.Z);
                     double cz = checkPos.Z + 0.5;
                     double dxp = Pos.X - cx;
-                    double dyp = Pos.Y - cy;
+                    // Don't penalise the Y gap for slope rails whose surface is above the cart:
+                    // the cart is supposed to climb to them, and inflating their distance causes
+                    // the flat rail behind to win until the cart is nearly at the slope top.
+                    double dyp = (cy > Pos.Y && blockAtPos.Code.Path.StartsWith("railslope"))
+                        ? 0.0
+                        : Pos.Y - cy;
                     double dzp = Pos.Z - cz;
                     double distSq = dxp * dxp + dyp * dyp + dzp * dzp;
 
@@ -185,44 +276,7 @@ public class EntityMinecart : Entity, IMountable
             }
         }
 
-        if (railBlock != null)
-        {
-            lastRailPos = railPos!.Copy();
-            double railSurfaceY = GetRailSurfaceY(railBlock, railPos!, Pos.X, Pos.Z);
-            if (Math.Abs(Pos.Y - railSurfaceY) > 0.01)
-            {
-                Pos.Y = railSurfaceY;
-                Pos.Y = railSurfaceY;
-            }
-
-            if (!railBlock.Code.Path.StartsWith("railslope"))
-            {
-                Pos.Motion.Y = 0;
-                Pos.Motion.Y = 0;
-            }
-            HandleRailMovement(railBlock, railPos!, dt);
-        }
-        else
-        {
-            if (GetSpeed() > 0.001f)
-            {
-                Pos.Motion.Set(0, 0, 0);
-                Pos.Motion.Set(0, 0, 0);
-                if (lastRailPos != null)
-                {
-                    Pos.X = lastRailPos.X + 0.5;
-                    Pos.Y = GetRailSurfaceY(World.BlockAccessor.GetBlock(lastRailPos), lastRailPos, Pos.X, Pos.Z);
-                    Pos.Z = lastRailPos.Z + 0.5;
-                    Pos.X = Pos.X;
-                    Pos.Y = Pos.Y;
-                    Pos.Z = Pos.Z;
-                }
-            }
-            travelDirection = null;
-            Block blockAt = World.BlockAccessor.GetBlock(entityBlockPos);
-            Block blockBelow = World.BlockAccessor.GetBlock(entityBlockPos.DownCopy());
-            Api.Logger.Debug($"[Minecart {EntityId}] Not on rail. Block at entity: {blockAt.Code}, Block below: {blockBelow.Code}");
-        }
+        return (railBlock, railPos);
     }
 
     private void HandleRailMovement(Block railBlock, BlockPos railPos, float dt)
@@ -232,11 +286,15 @@ public class EntityMinecart : Entity, IMountable
         bool isSlope = railBlock.Code.Path.StartsWith("railslope");
 
         bool hasPassenger = _seats[0].Passenger != null;
-        bool movingForward  = hasPassenger && _seats[0].Controls.Forward;
-        bool movingLeft  = hasPassenger && _seats[0].Controls.Left;
-        bool movingRight = hasPassenger && _seats[0].Controls.Right;
-        bool braking = hasPassenger && _seats[0].Controls.Jump;
-        bool hasDirectionalInput = movingForward || movingLeft || movingRight;
+        bool movingForward   = hasPassenger && _seats[0].Controls.Forward;
+        bool movingBackward  = hasPassenger && _seats[0].Controls.Backward;
+        bool movingLeft      = hasPassenger && _seats[0].Controls.Left;
+        bool movingRight     = hasPassenger && _seats[0].Controls.Right;
+        bool braking         = hasPassenger && _seats[0].Controls.Jump;
+        // hasForwardDirectionalInput excludes backward so junction branch selection
+        // isn't triggered when the rider is reversing — backward retraces the entry path.
+        bool hasForwardDirectionalInput = movingForward || movingLeft || movingRight;
+        bool hasDirectionalInput = hasForwardDirectionalInput || movingBackward;
         bool stoppedAtJunctionForInput = travelDirection == null
             && GetSpeed() < 0.05
             && (orientation.StartsWith("t-") || orientation == "cross");
@@ -244,7 +302,6 @@ public class EntityMinecart : Entity, IMountable
         bool leftHasNoEffect = false;
         bool rightHasNoEffect = false;
 
-        Api.Logger.Debug($"[Minecart {EntityId}] Passenger: {hasPassenger}, Forward: {movingForward}, Left: {movingLeft}, Right: {movingRight}");
 
         // Forward uses rider facing: accelerate in the rail direction most aligned with view.
         // If exactly perpendicular to available rail directions, forward has no velocity effect.
@@ -333,7 +390,7 @@ public class EntityMinecart : Entity, IMountable
 
         // At junctions (multiple possible continuations), let input choose the branch
         // that best matches rider facing.
-        if (hasDirectionalInput
+        if (hasForwardDirectionalInput
             && TryGetJunctionPreferredExitForInput(railPos, orientation, entry, movingForward, false, movingLeft, movingRight, out BlockFacing preferredExit))
         {
             exit = preferredExit;
@@ -368,6 +425,26 @@ public class EntityMinecart : Entity, IMountable
             // across every slope tick. Normalizing the 3D vector would shrink the horizontal
             // components each tick (÷ ~1.118), causing speed to decay as 0.894^n ticks on slope.
             targetMotion.Y = ascending ? 0.5 : -0.5;
+        }
+
+        // Backward input: compute a stable reverse direction once per press.
+        // Avoids the travelDirection oscillation that occurs when the branch
+        // flips it every tick (SOUTH→NORTH→SOUTH→...).
+        bool isBackwardInput = movingBackward && !hasForwardDirectionalInput;
+        if (isBackwardInput)
+        {
+            if (_backwardTarget == null)
+            {
+                float curSpd = (float)GetSpeed();
+                _backwardTarget = curSpd > 0.01f
+                    ? DominantFacing().Opposite
+                    : (travelDirection ?? DefaultFacingForOrientation(orientation)).Opposite;
+            }
+            targetMotion = FacingToMotion(_backwardTarget);
+        }
+        else
+        {
+            _backwardTarget = null;
         }
 
         float speed = (float)GetSpeed();
@@ -451,6 +528,11 @@ public class EntityMinecart : Entity, IMountable
             // (or rail-end clamping) changes the speed.
             newSpeed = speed;
         }
+
+        // For backward input, steer clamping toward the reverse target so the cart
+        // doesn't try to exit the wrong end of the rail while braking or reversing.
+        if (isBackwardInput && _backwardTarget != null)
+            movementFacing = _backwardTarget;
 
         // If track ends ahead, clamp movement to this rail's boundary and stop immediately.
         // Clamp checks use the active movement-facing direction, which is either
@@ -542,19 +624,6 @@ public class EntityMinecart : Entity, IMountable
         Pos.Y = Pos.Y;
         Pos.Z = Pos.Z;
 
-        if (_seats[0].Passenger is EntityPlayer riderPlayer && Api is ICoreServerAPI sapi)
-        {
-            sapi.Network.GetChannel(VintageCartsModSystem.ChannelName)
-                .SendPacket(new CartPositionPacket
-                {
-                    EntityId = EntityId,
-                    X = Pos.X, Y = Pos.Y, Z = Pos.Z,
-                    MotionX = Pos.Motion.X, MotionZ = Pos.Motion.Z,
-                    Yaw = Pos.Yaw
-                }, (IServerPlayer)riderPlayer.Player);
-        }
-
-        Api.Logger.Debug($"[Minecart {EntityId}] Speed: {newSpeed:F2}, Motion: ({Pos.Motion.X:F3}, {Pos.Motion.Y:F3}, {Pos.Motion.Z:F3}), Pos: ({Pos.X:F2},{Pos.Y:F2},{Pos.Z:F2})");
     }
 
     private BlockFacing InferJunctionTravelDirectionFromMotion(BlockPos railPos, string orientation, BlockFacing? fallback)
@@ -1049,6 +1118,8 @@ public class EntityMinecart : Entity, IMountable
 
         if (mode == EnumInteractMode.Attack)
         {
+            World.PlaySoundAt(new AssetLocation("game:sounds/block/metaldoor-place"),
+                Pos.X, Pos.Y, Pos.Z, null);
             DestroyAndDropMinecart(byEntity);
             return;
         }
@@ -1097,6 +1168,8 @@ public class EntityMinecart : Entity, IMountable
         newCart.LeaderId = tail.EntityId;
 
         World.SpawnEntity(newCart);
+        World.PlaySoundAt(new AssetLocation("game:sounds/block/metaldoor-place"),
+            spawnPos.X, spawnPos.Y, spawnPos.Z, null);
 
         // EntityId is assigned during SpawnEntity, so link tail → new cart after spawn.
         if (tail is EntityStorageMinecart storageTail)
@@ -1128,6 +1201,9 @@ public class EntityMinecart : Entity, IMountable
         // Ensure rider is unmounted before despawn so controls don't stick.
         if (_seats?[0].Passenger != null)
             (_seats[0].Passenger as EntityAgent)?.TryUnmount();
+
+        World.PlaySoundAt(new AssetLocation("game:sounds/block/metaldoor-place"),
+            Pos.X, Pos.Y, Pos.Z, null);
 
         Item? minecartItem = World.GetItem(DropItemLocation);
         if (minecartItem != null)

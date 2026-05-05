@@ -63,7 +63,9 @@ public class ItemMinecart : Item
 		entity.Pos.Yaw = spawnYaw;
 
 		byEntity.World.SpawnEntity(entity);
-		byEntity.World.Logger.Notification("[VintageCarts] Spawned minecart entity {0} at {1:F2},{2:F2},{3:F2}", entity.EntityId, spawnPos.X, spawnPos.Y, spawnPos.Z);
+		byEntity.World.PlaySoundAt(
+			new AssetLocation("game:sounds/block/metaldoor-place"),
+			spawnPos.X, spawnPos.Y, spawnPos.Z, null);
 
 		itemslot.TakeOut(1);
 		itemslot.MarkDirty();

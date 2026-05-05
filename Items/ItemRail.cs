@@ -48,11 +48,12 @@ public class ItemRail : Item
 
         world.BlockAccessor.SetBlock(target.Id, placePos);
 
-        IPlayer? player = (byEntity as EntityPlayer)?.Player;
+        // Pass null so the sound plays for all nearby players including the placer.
+        // PlaySoundAt with a non-null IPlayer excludes that player from hearing it.
         world.PlaySoundAt(
             new AssetLocation("game:sounds/block/planks"),
             placePos.X + 0.5, placePos.Y + 0.5, placePos.Z + 0.5,
-            player);
+            null);
 
         itemslot.TakeOut(1);
         itemslot.MarkDirty();

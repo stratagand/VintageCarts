@@ -35,12 +35,12 @@
     "materialDensity": 7000,
     "blockmaterial": "Wood",
     "lightAbsorption": 0,
-    "sounds": {
-        "place": "game:block/planks",
-        "hit": "game:block/planks",
-        "break": "game:block/planks",
-        "walk": "game:walk/wood"
-    },
+  "sounds": {
+    "place": "game:block/planks",
+    "break": "game:block/planks",
+    "hit": "game:block/planks",
+    "walk": "game:walk/wood"
+  },
     	"guiTransform": {
 		"translation": { "x": 0, "y": 2, "z": 0 },
 		"origin": { "x": 0.5, "y": 0.0625, "z": 0.5 },

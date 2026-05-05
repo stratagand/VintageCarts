@@ -13,7 +13,11 @@
       "quantity": { "avg": 1 }
     }
   ],
-  "sounds": {},
+  "sounds": {
+    "place": "game:block/metaldoor-place",
+    "break": "game:block/metaldoor-place",
+    "hit": "game:block/metaldoor-place"
+    },
   "client": {
     "renderer": "Shape",
     "shape": { "base": "vintagecarts:entity/minecart" },

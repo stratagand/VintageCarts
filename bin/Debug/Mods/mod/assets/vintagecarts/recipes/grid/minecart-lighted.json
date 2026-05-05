@@ -8,7 +8,7 @@
       },
       "L": {
         "type": "block",
-        "code": "game:lantern-up",
+        "code": "game:lantern-small-up",
         "name": "material",
         "attributes": {
           "material": "copper",
@@ -34,7 +34,7 @@
       },
       "L": {
         "type": "block",
-        "code": "game:lantern-up",
+        "code": "game:lantern-small-up",
         "name": "material",
         "attributes": {
           "material": "bismuthbronze",
@@ -60,7 +60,7 @@
       },
       "L": {
         "type": "block",
-        "code": "game:lantern-up",
+        "code": "game:lantern-small-up",
         "name": "material",
         "attributes": {
           "material": "tinbronze",
@@ -86,7 +86,7 @@
       },
       "L": {
         "type": "block",
-        "code": "game:lantern-up",
+        "code": "game:lantern-small-up",
         "name": "material",
         "attributes": {
           "material": "blackbronze",

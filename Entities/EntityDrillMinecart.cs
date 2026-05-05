@@ -148,38 +148,158 @@ public class EntityDrillMinecart : EntityMinecart
     protected override bool OnReachedRailEnd(BlockFacing travelFacing, BlockPos railPos)
     {
         if (!DrillActive) return false;
+        return GetDrillDirection() switch
+        {
+            DrillDirection.Up   => DrillUp(travelFacing, railPos),
+            DrillDirection.Down => DrillDown(travelFacing, railPos),
+            _                   => DrillFlat(travelFacing, railPos),
+        };
+    }
 
-        BlockPos frontPos = OffsetPos(railPos, travelFacing);
+    private enum DrillDirection { Flat, Up, Down }
+
+    // VS Pitch convention: π (≈3.14) = looking straight ahead (horizontal).
+    // Pitch decreases when looking up, increases when looking down.
+    // Observed range: max-up ≈ 2.02 (deviation −1.12), max-down ≈ 4.68 (deviation +1.54).
+    // Threshold of 0.6 sits comfortably between neutral (deviation ≈ 0) and either extreme.
+    private const float PitchThreshold = 0.6f;
+
+    private DrillDirection GetDrillDirection()
+    {
+        if (Controller is not EntityPlayer rider) return DrillDirection.Flat;
+        float deviation = (float)(rider.Pos.Pitch - Math.PI);
+        if (deviation >  PitchThreshold) return DrillDirection.Down;
+        if (deviation < -PitchThreshold) return DrillDirection.Up;
+        return DrillDirection.Flat;
+    }
+
+    /// <summary>
+    /// Returns the position where the next rail should be drilled, accounting for the
+    /// current rail being a slope.  After an ascending slope the target is one block up;
+    /// after a descending slope it is one block down; flat stays at the same Y.
+    /// </summary>
+    private BlockPos GetDrillFrontPos(BlockPos railPos, BlockFacing travelFacing)
+    {
+        Block block = World.BlockAccessor.GetBlock(railPos);
+        if (block.Variant.ContainsKey("type"))
+        {
+            bool ascending = block.Variant["type"] switch
+            {
+                "raised_ns" => travelFacing == BlockFacing.NORTH,
+                "raised_sn" => travelFacing == BlockFacing.SOUTH,
+                "raised_ew" => travelFacing == BlockFacing.EAST,
+                "raised_we" => travelFacing == BlockFacing.WEST,
+                _ => false
+            };
+            // After an ascending slope the cart exits one block higher; after a descending
+            // slope the exit Y equals the slope block's own Y (low end = block Y + 0),
+            // so no vertical offset is needed — the flat case covers it.
+            if (ascending) return OffsetPos(railPos, travelFacing).UpCopy();
+        }
+        return OffsetPos(railPos, travelFacing);
+    }
+
+    private bool DrillFlat(BlockFacing travelFacing, BlockPos railPos)
+    {
+        BlockPos frontPos = GetDrillFrontPos(railPos, travelFacing);
         BlockPos abovePos = frontPos.UpCopy();
 
         Block frontBlock = World.BlockAccessor.GetBlock(frontPos);
         Block aboveBlock = World.BlockAccessor.GetBlock(abovePos);
 
-        if (!CanDrill(frontBlock, frontPos) || !CanDrill(aboveBlock, abovePos))
-            return false;
+        if (!CanDrill(frontBlock, frontPos) || !CanDrill(aboveBlock, abovePos)) return false;
+        if (!TryConsumeRailFromPlayer()) return false;
 
-        if (!TryConsumeRailFromPlayer())
-            return false;
+        if (aboveBlock.Id != 0) World.BlockAccessor.BreakBlock(abovePos, null);
+        if (frontBlock.Id != 0) World.BlockAccessor.BreakBlock(frontPos, null);
 
-        if (aboveBlock.Id != 0)
-            World.BlockAccessor.BreakBlock(abovePos, null);
-        if (frontBlock.Id != 0)
-            World.BlockAccessor.BreakBlock(frontPos, null);
-
-        Block seed = World.BlockAccessor.GetBlock(new AssetLocation("vintagecarts:rail-flat_ns"));
-        if (seed is BlockRail railBlock)
-        {
-            string variantCode = railBlock.DetermineRailVariant(World, frontPos);
-            Block target = World.BlockAccessor.GetBlock(new AssetLocation(variantCode));
-            if (target != null && target.Id != 0)
-            {
-                World.BlockAccessor.SetBlock(target.Id, frontPos);
-                railBlock.UpdateNeighborRailsPublic(World, frontPos);
-            }
-        }
-
+        PlaceFlatRail(frontPos);
         World.PlaySoundAt(SoundDrill, Pos.X, Pos.Y, Pos.Z, null, randomizePitch: false);
         return true;
+    }
+
+    private bool DrillUp(BlockFacing travelFacing, BlockPos railPos)
+    {
+        // Slope block sits at the same Y as the current rail end and rises one block.
+        // Two blocks above must be clear for rider headroom at the slope peak.
+        BlockPos slopePos  = GetDrillFrontPos(railPos, travelFacing);
+        BlockPos clearPos1 = slopePos.UpCopy();
+        BlockPos clearPos2 = slopePos.UpCopy(2);
+
+        Block slopeBlock  = World.BlockAccessor.GetBlock(slopePos);
+        Block clear1Block = World.BlockAccessor.GetBlock(clearPos1);
+        Block clear2Block = World.BlockAccessor.GetBlock(clearPos2);
+
+        if (!CanDrill(slopeBlock, slopePos) || !CanDrill(clear1Block, clearPos1) || !CanDrill(clear2Block, clearPos2))
+            return false;
+        if (!TryConsumeRailFromPlayer()) return false;
+
+        if (clear2Block.Id != 0) World.BlockAccessor.BreakBlock(clearPos2, null);
+        if (clear1Block.Id != 0) World.BlockAccessor.BreakBlock(clearPos1, null);
+        if (slopeBlock.Id  != 0) World.BlockAccessor.BreakBlock(slopePos,  null);
+
+        PlaceSlopeRail(slopePos, ascentFacing: travelFacing);
+        World.PlaySoundAt(SoundDrill, Pos.X, Pos.Y, Pos.Z, null, randomizePitch: false);
+        return true;
+    }
+
+    private bool DrillDown(BlockFacing travelFacing, BlockPos railPos)
+    {
+        // frontPos is at the exit elevation of the current rail (same Y for flat/descending,
+        // Y+1 for ascending — handled by GetDrillFrontPos).
+        // The slope block lives one Y-level below frontPos; its ascent faces opposite to
+        // travel so its high end aligns with the current rail surface level.
+        // Three blocks must be clear: headroom above frontPos, frontPos itself, and slopePos.
+        BlockPos frontPos = GetDrillFrontPos(railPos, travelFacing);
+        BlockPos abovePos = frontPos.UpCopy();
+        BlockPos slopePos = frontPos.DownCopy();
+
+        Block aboveBlock = World.BlockAccessor.GetBlock(abovePos);
+        Block frontBlock = World.BlockAccessor.GetBlock(frontPos);
+        Block slopeBlock = World.BlockAccessor.GetBlock(slopePos);
+
+        if (!CanDrill(aboveBlock, abovePos) || !CanDrill(frontBlock, frontPos) || !CanDrill(slopeBlock, slopePos))
+            return false;
+        if (!TryConsumeRailFromPlayer()) return false;
+
+        if (aboveBlock.Id != 0) World.BlockAccessor.BreakBlock(abovePos, null);
+        if (frontBlock.Id != 0) World.BlockAccessor.BreakBlock(frontPos, null);
+        if (slopeBlock.Id != 0) World.BlockAccessor.BreakBlock(slopePos, null);
+
+        PlaceSlopeRail(slopePos, ascentFacing: travelFacing.Opposite);
+        World.PlaySoundAt(SoundDrill, Pos.X, Pos.Y, Pos.Z, null, randomizePitch: false);
+        return true;
+    }
+
+    private void PlaceFlatRail(BlockPos pos)
+    {
+        Block seed = World.BlockAccessor.GetBlock(new AssetLocation("vintagecarts:rail-flat_ns"));
+        if (seed is not BlockRail railBlock) return;
+
+        string variantCode = railBlock.DetermineRailVariant(World, pos);
+        Block target = World.BlockAccessor.GetBlock(new AssetLocation(variantCode));
+        if (target != null && target.Id != 0)
+        {
+            World.BlockAccessor.SetBlock(target.Id, pos);
+            railBlock.UpdateNeighborRailsPublic(World, pos);
+        }
+    }
+
+    private void PlaceSlopeRail(BlockPos pos, BlockFacing ascentFacing)
+    {
+        // Slopes are rail-raised_* variants, not a separate block type.
+        // Variant name encodes the ascent direction as two-letter pair (high end first).
+        string variantType = ascentFacing == BlockFacing.NORTH ? "raised_ns"
+                           : ascentFacing == BlockFacing.SOUTH ? "raised_sn"
+                           : ascentFacing == BlockFacing.EAST  ? "raised_ew"
+                           : "raised_we"; // WEST
+        AssetLocation slopeCode = new($"vintagecarts:rail-{variantType}");
+        Block block = World.BlockAccessor.GetBlock(slopeCode);
+        if (block == null || block.Id == 0) return;
+
+        World.BlockAccessor.SetBlock(block.Id, pos);
+        if (block is BlockRail br)
+            br.UpdateNeighborRailsPublic(World, pos);
     }
 
     private static readonly AssetLocation RailItemCode = new("vintagecarts:rail");

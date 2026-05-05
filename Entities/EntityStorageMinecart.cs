@@ -146,6 +146,8 @@ public class EntityStorageMinecart : Entity
 
         if (mode == EnumInteractMode.Attack)
         {
+            World.PlaySoundAt(new AssetLocation("game:sounds/block/metaldoor-place"),
+                Pos.X, Pos.Y, Pos.Z, null);
             DestroyAndDrop(byEntity);
             return;
         }
@@ -198,6 +200,9 @@ public class EntityStorageMinecart : Entity
             World.SpawnItemEntity(storageInventory[i].Itemstack, Pos.XYZ);
             storageInventory[i].Itemstack = null;
         }
+
+        World.PlaySoundAt(new AssetLocation("game:sounds/block/metaldoor-place"),
+            Pos.X, Pos.Y, Pos.Z, null);
 
         Item? cartItem = World.GetItem(new AssetLocation("vintagecarts:minecart-storage"));
         if (cartItem != null)

@@ -13,7 +13,8 @@
   "guiTransform": {
     "translation": { "x": 1, "y": -4, "z": 0 },
     "rotation": { "x": 0, "y": 0, "z": 180 },
-    "scale": 1.42
+    "scale": 1.3,
+    "rotate": true
   },
   "tpHandTransform": {
     "translation": { "x": -1.2, "y": -0.4, "z": -1.3 },
