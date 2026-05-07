@@ -94,8 +94,10 @@ public class GuiDialogStorageMinecart : GuiDialogGeneric
         bool closed = base.TryClose();
         if (closed)
         {
-            // Unregister so shift+click stops routing here.
-            capi.World.Player.InventoryManager.CloseInventory(_cart.StorageInventory);
+            // CloseInventoryAndSync unregisters locally AND sends the close packet to the
+            // server so the server-side InventoryManager also removes this inventory from
+            // the player's open-inventory routing table.
+            capi.World.Player.InventoryManager.CloseInventoryAndSync(_cart.StorageInventory);
 
             capi.World.PlaySoundAt(SoundClose, _cart.Pos.X, _cart.Pos.Y, _cart.Pos.Z, null, true, 16f);
             // Stopping "lidopen" triggers onActivityStopped: "Rewind" in the shape, which plays the lid close.

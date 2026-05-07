@@ -1,0 +1,41 @@
+{
+  "code": "minecart-drill",
+  "class": "EntityDrillMinecart",
+  "habitat": "Land",
+  "hitboxSize": { "x": 0.9, "y": 0.7 },
+  "deadHitboxSize": { "x": 0.9, "y": 0.3 },
+  "eyeHeight": 0.9,
+  "weight": 200,
+  "drops": [
+    {
+      "type": "item",
+      "code": "vintagecarts:minecart-drill",
+      "quantity": { "avg": 1 }
+    }
+  ],
+  "sounds": {
+    "place": "game:block/metaldoor-place",
+    "break": "game:block/metaldoor-place",
+    "hit": "game:block/metaldoor-place"
+    },
+  "client": {
+    "renderer": "Shape",
+    "shape": { "base": "vintagecarts:entity/minecart-drill" },
+    "textures": { "minecart": { "base": "vintagecarts:entity/minecart" } },
+    "size": 1.0,
+    "behaviors": [
+      { "code": "interpolateposition" }
+    ]
+  },
+  "server": {
+    "behaviors": [
+      {
+        "code": "passivephysics",
+        "gravityFactor": 0,
+        "groundDragFactor": 0,
+        "airDragFactor": 0
+      },
+      { "code": "health", "currenthealth": 20, "maxhealth": 20 }
+    ]
+  }
+}

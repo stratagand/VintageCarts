@@ -1,0 +1,9 @@
+{
+  "ingredientPattern": "P P,P P,P P",
+  "ingredients": {
+    "P": { "type": "item", "code": "game:plank-*", "name": "wood" }
+  },
+  "width": 3,
+  "height": 3,
+  "output": { "type": "item", "code": "vintagecarts:rail", "quantity": 128 }
+}

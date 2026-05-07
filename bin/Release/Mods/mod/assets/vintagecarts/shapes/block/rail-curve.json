@@ -1,0 +1,316 @@
+{
+  "textureWidth": 16,
+  "textureHeight": 16,
+  "textures": {
+    "iron": "game:block/metal/ingot/iron",
+    "oak1": "game:block/wood/planks/oak1"
+  },
+  "elements": [
+    {
+      "name": "north-rail-w",
+      "from": [
+        1,
+        0,
+        0
+      ],
+      "to": [
+        3,
+        2,
+        9
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            2,
+            2
+          ],
+          "texture": "#iron"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            9,
+            2
+          ],
+          "texture": "#iron"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            9,
+            2
+          ],
+          "texture": "#iron"
+        },
+        "up": {
+          "uv": [
+            1,
+            0,
+            3,
+            9
+          ],
+          "texture": "#iron"
+        },
+        "down": {
+          "uv": [
+            1,
+            0,
+            3,
+            9
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "north-rail-e",
+      "from": [
+        13,
+        0,
+        0
+      ],
+      "to": [
+        15,
+        2,
+        9
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            2,
+            2
+          ],
+          "texture": "#iron"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            9,
+            2
+          ],
+          "texture": "#iron"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            9,
+            2
+          ],
+          "texture": "#iron"
+        },
+        "up": {
+          "uv": [
+            13,
+            0,
+            15,
+            9
+          ],
+          "texture": "#iron"
+        },
+        "down": {
+          "uv": [
+            13,
+            0,
+            15,
+            9
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "east-rail-n",
+      "from": [
+        7,
+        0,
+        1
+      ],
+      "to": [
+        16,
+        2,
+        3
+      ],
+      "faces": {
+        "east": {
+          "uv": [
+            0,
+            0,
+            2,
+            2
+          ],
+          "texture": "#iron"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            9,
+            2
+          ],
+          "texture": "#iron"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            9,
+            2
+          ],
+          "texture": "#iron"
+        },
+        "up": {
+          "uv": [
+            7,
+            1,
+            16,
+            3
+          ],
+          "texture": "#iron"
+        },
+        "down": {
+          "uv": [
+            7,
+            1,
+            16,
+            3
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "east-rail-s",
+      "from": [
+        7,
+        0,
+        13
+      ],
+      "to": [
+        16,
+        2,
+        15
+      ],
+      "faces": {
+        "east": {
+          "uv": [
+            0,
+            0,
+            2,
+            2
+          ],
+          "texture": "#iron"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            9,
+            2
+          ],
+          "texture": "#iron"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            9,
+            2
+          ],
+          "texture": "#iron"
+        },
+        "up": {
+          "uv": [
+            7,
+            13,
+            16,
+            15
+          ],
+          "texture": "#iron"
+        },
+        "down": {
+          "uv": [
+            7,
+            13,
+            16,
+            15
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "corner-nw",
+      "from": [
+        1,
+        0,
+        1
+      ],
+      "to": [
+        9,
+        1,
+        9
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            1,
+            1,
+            9,
+            9
+          ],
+          "texture": "#iron"
+        },
+        "down": {
+          "uv": [
+            1,
+            1,
+            9,
+            9
+          ],
+          "texture": "#iron"
+        }
+      }
+    },
+    {
+      "name": "corner-se",
+      "from": [
+        7,
+        0,
+        7
+      ],
+      "to": [
+        15,
+        1,
+        15
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            7,
+            7,
+            15,
+            15
+          ],
+          "texture": "#iron"
+        },
+        "down": {
+          "uv": [
+            7,
+            7,
+            15,
+            15
+          ],
+          "texture": "#iron"
+        }
+      }
+    }
+  ]
+}

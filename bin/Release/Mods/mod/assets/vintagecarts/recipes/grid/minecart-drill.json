@@ -1,0 +1,36 @@
+[
+  {
+    "ingredientPattern": "MDL,ES_",
+    "ingredients": {
+      "M": {
+        "type": "item",
+        "code": "vintagecarts:minecart-lighted"
+      },
+      "S": {
+        "type": "item",
+        "code": "game:jonasframes-spring01"
+      },
+      "L": {
+        "type": "item",
+        "code": "game:ingot-steel"
+      },
+      "E": {
+        "type": "item",
+        "code": "game:metalplate-*",
+        "name": "metal",
+        "allowedVariants": ["electrum"]
+      },
+      "D": {
+        "type": "item",
+        "code": "game:jonasframes-gears01"
+      }
+    },
+    "width": 3,
+    "height": 2,
+    "output": {
+      "type": "item",
+      "code": "vintagecarts:minecart-drill",
+      "quantity": 1
+    }
+  }
+]

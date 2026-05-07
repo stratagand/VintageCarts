@@ -25,6 +25,7 @@ public class EntityStorageMinecart : Entity
     private long _leaderId = -1;
     private long _followerCartId = -1;
     private bool _isBeingDestroyed = false;
+    private TreeAttribute? _pendingInventoryData;
 
     public long LeaderId
     {
@@ -85,6 +86,21 @@ public class EntityStorageMinecart : Entity
     {
         base.Initialize(properties, api, InChunkIndex3d);
         storageInventory = new InventoryGeneric(StorageSlotCount, "vintagecarts-storage-" + EntityId, api);
+
+        // Restore inventory contents that were deserialized before Initialize was called.
+        if (_pendingInventoryData != null)
+        {
+            storageInventory.FromTreeAttributes(_pendingInventoryData);
+            _pendingInventoryData = null;
+        }
+
+        // When the server modifies a storage slot (e.g. via shift-click routing from the player's
+        // own inventory), VS does not automatically push the change to the client because this is
+        // an entity inventory rather than a block-entity inventory. Subscribing here ensures any
+        // slot change triggers a full sync to every player who has this cart's GUI open.
+        if (api.Side == EnumAppSide.Server)
+            storageInventory.SlotModified += _ => BroadcastInventoryUpdate();
+
         Pos.Motion.Set(0, 0, 0);
         Pos.Motion.Set(0, 0, 0);
     }
@@ -158,6 +174,9 @@ public class EntityStorageMinecart : Entity
 
         // Register player as viewing this inventory; VS InvNetworkUtil pushes all slots to them.
         storageInventory.Open(player);
+        // Must be called server-side so VS's inventory manager knows this inventory is open
+        // for this player, enabling shift-click routing between player inventory and storage.
+        player.InventoryManager.OpenInventory(storageInventory);
 
         // Tell the client to open the GUI.
         ((ICoreServerAPI)Api).Network
@@ -191,7 +210,10 @@ public class EntityStorageMinecart : Entity
         if (Api is ICoreServerAPI sapi)
         {
             foreach (IServerPlayer p in sapi.World.AllOnlinePlayers)
+            {
                 storageInventory.Close(p);
+                p.InventoryManager.CloseInventory(storageInventory);
+            }
         }
 
         for (int i = 0; i < storageInventory.Count; i++)
@@ -229,7 +251,10 @@ public class EntityStorageMinecart : Entity
             _leaderId = reader.ReadInt64();
             var tree = new TreeAttribute();
             tree.FromBytes(reader);
-            storageInventory?.FromTreeAttributes(tree);
+            if (storageInventory != null)
+                storageInventory.FromTreeAttributes(tree);
+            else
+                _pendingInventoryData = tree;
             _followerCartId = reader.ReadInt64();
         }
         catch { }

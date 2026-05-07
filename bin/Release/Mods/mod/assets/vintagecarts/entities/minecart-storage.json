@@ -1,0 +1,35 @@
+{
+  "code": "minecart-storage",
+  "class": "EntityStorageMinecart",
+  "habitat": "Land",
+  "hitboxSize": { "x": 0.9, "y": 0.9 },
+  "deadHitboxSize": { "x": 0.9, "y": 0.3 },
+  "eyeHeight": 0.9,
+  "weight": 250,
+  "drops": [
+    {
+      "type": "item",
+      "code": "vintagecarts:minecart-storage",
+      "quantity": { "avg": 1 }
+    }
+  ],
+  "sounds": {
+    "place": "game:block/metaldoor-place",
+    "break": "game:block/metaldoor-place",
+    "hit": "game:block/metaldoor-place"
+    },
+  "client": {
+    "renderer": "Shape",
+    "shape": { "base": "vintagecarts:entity/minecart-storage" },
+    "textures": { "minecart": { "base": "vintagecarts:entity/minecart" } },
+    "size": 1.0,
+    "behaviors": [
+      { "code": "interpolateposition" }
+    ]
+  },
+  "server": {
+    "behaviors": [
+      { "code": "health", "currenthealth": 20, "maxhealth": 20 }
+    ]
+  }
+}

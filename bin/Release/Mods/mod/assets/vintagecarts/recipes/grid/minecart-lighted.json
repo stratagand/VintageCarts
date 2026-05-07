@@ -1,0 +1,106 @@
+[
+  {
+    "ingredientPattern": "ML",
+    "ingredients": {
+      "M": {
+        "type": "item",
+        "code": "vintagecarts:minecart"
+      },
+      "L": {
+        "type": "block",
+        "code": "game:lantern-small-up",
+        "name": "material",
+        "attributes": {
+          "material": "copper",
+          "lining": "plain",
+          "glass": "quartz"
+        }
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "item",
+      "code": "vintagecarts:minecart-lighted",
+      "quantity": 1
+    }
+  },
+    {
+    "ingredientPattern": "ML",
+    "ingredients": {
+      "M": {
+        "type": "item",
+        "code": "vintagecarts:minecart"
+      },
+      "L": {
+        "type": "block",
+        "code": "game:lantern-small-up",
+        "name": "material",
+        "attributes": {
+          "material": "bismuthbronze",
+          "lining": "plain",
+          "glass": "quartz"
+        }
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "item",
+      "code": "vintagecarts:minecart-lighted",
+      "quantity": 1
+    }
+  },
+    {
+    "ingredientPattern": "ML",
+    "ingredients": {
+      "M": {
+        "type": "item",
+        "code": "vintagecarts:minecart"
+      },
+      "L": {
+        "type": "block",
+        "code": "game:lantern-small-up",
+        "name": "material",
+        "attributes": {
+          "material": "tinbronze",
+          "lining": "plain",
+          "glass": "quartz"
+        }
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "item",
+      "code": "vintagecarts:minecart-lighted",
+      "quantity": 1
+    }
+  },
+    {
+    "ingredientPattern": "ML",
+    "ingredients": {
+      "M": {
+        "type": "item",
+        "code": "vintagecarts:minecart"
+      },
+      "L": {
+        "type": "block",
+        "code": "game:lantern-small-up",
+        "name": "material",
+        "attributes": {
+          "material": "blackbronze",
+          "lining": "plain",
+          "glass": "quartz"
+        }
+      }
+    },
+    "width": 2,
+    "height": 1,
+    "output": {
+      "type": "item",
+      "code": "vintagecarts:minecart-lighted",
+      "quantity": 1
+    }
+  }
+]
