@@ -1,0 +1,36 @@
+[
+  {
+    "op": "addmerge",
+    "path": "/attributes/juiceablePropertiesByType",
+    "value": {
+      "*-flax": {
+        "litresPerItem": 0.078125,
+        "liquidStack": {
+          "type": "item",
+          "code": "expandedfoods:foodoilportion-flax",
+          "stacksize": 1
+        },
+        "pressedStack": {
+          "type": "item",
+          "code": "game:pressedmash-flax",
+          "stacksize": 1
+        }
+      },
+      "*-rice": {
+        "litresPerItem": 0.078125,
+        "liquidStack": {
+          "type": "item",
+          "code": "expandedfoods:foodoilportion-rice",
+          "stacksize": 1
+        },
+        "pressedStack": {
+          "type": "item",
+          "code": "game:pressedmash-rice",
+          "stacksize": 1
+        }
+      }
+    },
+    "side": "server",
+    "file": "game:itemtypes/food/grain.json"
+  }
+]

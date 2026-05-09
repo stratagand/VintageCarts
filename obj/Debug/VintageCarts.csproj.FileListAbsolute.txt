@@ -94,3 +94,4 @@ C:\Users\Russe\Documents\VintageStoryMods\VintageCarts\obj\Debug\VintageCarts.dl
 C:\Users\Russe\Documents\VintageStoryMods\VintageCarts\obj\Debug\refint\VintageCarts.dll
 C:\Users\Russe\Documents\VintageStoryMods\VintageCarts\obj\Debug\VintageCarts.pdb
 C:\Users\Russe\Documents\VintageStoryMods\VintageCarts\obj\Debug\ref\VintageCarts.dll
+C:\Users\Russe\Documents\VintageStoryMods\VintageCarts\bin\Debug\Mods\mod\assets\vintagecarts\patches\grain.json
