@@ -162,9 +162,17 @@ public class EntityStorageMinecart : Entity
 
         if (mode == EnumInteractMode.Attack)
         {
+            int hitsRemaining = WatchedAttributes.GetInt("hitsRemaining", EntityMinecart.HitsToBreak);
+            hitsRemaining--;
+            WatchedAttributes.SetInt("hitsRemaining", hitsRemaining);
+            WatchedAttributes.MarkPathDirty("hitsRemaining");
+
             World.PlaySoundAt(new AssetLocation("game:sounds/block/metaldoor-place"),
                 Pos.X, Pos.Y, Pos.Z, null);
-            DestroyAndDrop(byEntity);
+
+            if (hitsRemaining <= 0)
+                DestroyAndDrop(byEntity);
+
             return;
         }
 

@@ -20,6 +20,7 @@ public class EntityMinecart : Entity, IMountable
     private static float Acceleration => VintageCartsModSystem.Config.Acceleration;
     private const double MovingAnimationSpeedThreshold = 0.01;
 
+    internal const int HitsToBreak = 4;
     private const float RiderYOffset = 0.35f;
     private const double RailVisualTopOffset = 0.25;
     private const double RampHeight = 1.0;
@@ -472,7 +473,7 @@ public class EntityMinecart : Entity, IMountable
         else if (braking)
         {
             // Brake: decelerate at the same rate as forward acceleration, never reverse.
-            newSpeed = Math.Max(0, speed - Acceleration * dt);
+            newSpeed = Math.Max(0, speed - Acceleration * 2f * dt);
             if (speed > 0.0001f)
             {
                 appliedMotion = new Vec3d(Pos.Motion.X / speed, 0, Pos.Motion.Z / speed);
@@ -1118,9 +1119,17 @@ public class EntityMinecart : Entity, IMountable
 
         if (mode == EnumInteractMode.Attack)
         {
+            int hitsRemaining = WatchedAttributes.GetInt("hitsRemaining", HitsToBreak);
+            hitsRemaining--;
+            WatchedAttributes.SetInt("hitsRemaining", hitsRemaining);
+            WatchedAttributes.MarkPathDirty("hitsRemaining");
+
             World.PlaySoundAt(new AssetLocation("game:sounds/block/metaldoor-place"),
                 Pos.X, Pos.Y, Pos.Z, null);
-            DestroyAndDropMinecart(byEntity);
+
+            if (hitsRemaining <= 0)
+                DestroyAndDropMinecart(byEntity);
+
             return;
         }
 

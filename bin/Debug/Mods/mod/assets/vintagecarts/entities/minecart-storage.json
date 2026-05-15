@@ -29,7 +29,6 @@
   },
   "server": {
     "behaviors": [
-      { "code": "health", "currenthealth": 20, "maxhealth": 20 }
     ]
   }
 }

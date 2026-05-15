@@ -34,8 +34,7 @@
         "gravityFactor": 0,
         "groundDragFactor": 0,
         "airDragFactor": 0
-      },
-      { "code": "health", "currenthealth": 20, "maxhealth": 20 }
+      }
     ]
   }
 }

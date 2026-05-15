@@ -1,19 +1,18 @@
 Enhancements
-Toggle button to turn drill on and off
-Increase complexity of drill cart blueprint
-Add a whistle to Minecart
-Have drill face the direction that the cart is moving in
-Consider an alternate resting drill speed
-HUD display for drill mode
-HUD display for # of rail
+1) Make minecarts more durable (more hits to break) to avoid accidental breakage
+2) Add a whistle to Minecart
+3) Have drill face the direction that the cart is moving in
+4) Consider an alternate resting drill speed
+5) HUD display for drill mode
+6) HUD display for # of rail
 
 
 Bugs to Fix
-In creative mode, change "tabname-VintageCarts" to "Vintage Carts"
-Update the 2D Minecart view to have the slightly more rounded wheels
-Some debris started bouncing on the track causing damage to player and cart, in one instance the cart started moving the opposite direction all by itself (might be where my other missing cart went...)
-Still a bug where person inventory doesn't get properly updated.  When you click on a slot, the stack of stuff appears
-When you have a storage cart with items and you pick the cart up off the track, the items in the chest go *poof*
+1) In creative mode, change "tabname-VintageCarts" to "Vintage Carts"
+2) Update the 2D Minecart view to have the slightly more rounded wheels
+3) Some debris started bouncing on the track causing damage to player and cart, in one instance the cart started moving the opposite direction all by itself (might be where my other missing cart went...)
+4) Still a bug where person inventory doesn't get properly updated.  When you click on a slot, the stack of stuff appears
+5) When you have a storage cart with items and you pick the cart up off the track, the items in the chest go *poof*
   * Had an issue where the drill cart got killed due to falling gravel debris with a lake right above.  Couldn't reconnect the storage cart without breaking the cart and putting it back down.
   * When breaking the storage cart that had HP missing, it regained full health when I put it back down
   * If a storage cart gets destroyed, the items from the cart should either stay in the cart (like the CarryOn mod) or fall out of the cart and need to all be picked up
