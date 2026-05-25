@@ -19,10 +19,13 @@ public class EntityDrillMinecart : EntityMinecart
     public override byte[] LightHsv => new byte[] { 10, 6, 22 };
 
     private static readonly AssetLocation SoundDrill = new("vintagecarts:sounds/drill");
-    private const float DrillMaxSpeed = 1.5f;
+    private const float DrillMaxSpeed = 2.0f;
 
     private bool _lastDrillActive;
+    private bool _lastJump;
     private ILoadedSound? _drillSound;
+
+    protected override bool SpacebarBrakes => false;
 
     protected override AssetLocation DropItemLocation =>
         new AssetLocation("vintagecarts:minecart-drill");
@@ -44,6 +47,13 @@ public class EntityDrillMinecart : EntityMinecart
 
             if (DrillActive)
                 ClampMotionToDrillSpeed();
+
+            bool jumpNow = AnyMounted() && ControllingControls.Jump;
+            if (jumpNow && !_lastJump)
+                DrillDir = DrillDir == DrillDirection.Level   ? DrillDirection.Ascend
+                         : DrillDir == DrillDirection.Ascend  ? DrillDirection.Descend
+                         :                                       DrillDirection.Level;
+            _lastJump = jumpNow;
         }
 
         if (Api.Side == EnumAppSide.Client)
@@ -142,35 +152,109 @@ public class EntityDrillMinecart : EntityMinecart
             return;
         }
 
+        bool wasMounted = AnyMounted();
         base.OnInteract(byEntity, slot, hitPosition, mode);
+        if (!wasMounted && AnyMounted())
+            DrillDir = DrillDirection.Level;
+    }
+
+    public enum DrillDirection { Level = 0, Ascend = 1, Descend = 2 }
+
+    public DrillDirection DrillDir
+    {
+        get => (DrillDirection)WatchedAttributes.GetInt("drillDir", 0);
+        set => WatchedAttributes.SetInt("drillDir", (int)value);
     }
 
     protected override bool OnReachedRailEnd(BlockFacing travelFacing, BlockPos railPos)
     {
         if (!DrillActive) return false;
-        return GetDrillDirection() switch
+
+        BlockFacing? turnFacing = GetTurnFacing(travelFacing);
+        if (turnFacing != null)
+            return DrillTurn(travelFacing, railPos, turnFacing);
+
+        return DrillDir switch
         {
-            DrillDirection.Up   => DrillUp(travelFacing, railPos),
-            DrillDirection.Down => DrillDown(travelFacing, railPos),
-            _                   => DrillFlat(travelFacing, railPos),
+            DrillDirection.Ascend  => DrillUp(travelFacing, railPos),
+            DrillDirection.Descend => DrillDown(travelFacing, railPos),
+            _                      => DrillFlat(travelFacing, railPos),
         };
     }
 
-    private enum DrillDirection { Flat, Up, Down }
-
-    // VS Pitch convention: π (≈3.14) = looking straight ahead (horizontal).
-    // Pitch decreases when looking up, increases when looking down.
-    // Observed range: max-up ≈ 2.02 (deviation −1.12), max-down ≈ 4.68 (deviation +1.54).
-    // Threshold of 0.6 sits comfortably between neutral (deviation ≈ 0) and either extreme.
-    private const float PitchThreshold = 0.6f;
-
-    private DrillDirection GetDrillDirection()
+    // Returns the perpendicular turn direction when the rider presses Left or Right
+    // (exclusive — Left takes priority if both are held; Forward is ignored so the
+    // player can hold W+A to move and turn simultaneously).
+    private BlockFacing? GetTurnFacing(BlockFacing travelFacing)
     {
-        if (Controller is not EntityPlayer rider) return DrillDirection.Flat;
-        float deviation = (float)(rider.Pos.Pitch - Math.PI);
-        if (deviation >  PitchThreshold) return DrillDirection.Down;
-        if (deviation < -PitchThreshold) return DrillDirection.Up;
-        return DrillDirection.Flat;
+        if (!AnyMounted()) return null;
+
+        bool goLeft  = ControllingControls.Left;
+        bool goRight = ControllingControls.Right && !goLeft;
+        if (!goLeft && !goRight) return null;
+
+        // Since AngleMode = PushYaw the rider's yaw matches the cart's travel direction,
+        // so Left/Right input is naturally relative to the travel direction.
+        if (goLeft)
+        {
+            if (travelFacing == BlockFacing.NORTH) return BlockFacing.WEST;
+            if (travelFacing == BlockFacing.SOUTH) return BlockFacing.EAST;
+            if (travelFacing == BlockFacing.EAST)  return BlockFacing.NORTH;
+            return BlockFacing.SOUTH; // WEST
+        }
+        else
+        {
+            if (travelFacing == BlockFacing.NORTH) return BlockFacing.EAST;
+            if (travelFacing == BlockFacing.SOUTH) return BlockFacing.WEST;
+            if (travelFacing == BlockFacing.EAST)  return BlockFacing.SOUTH;
+            return BlockFacing.NORTH; // WEST
+        }
+    }
+
+    private bool DrillTurn(BlockFacing travelFacing, BlockPos railPos, BlockFacing turnFacing)
+    {
+        BlockPos frontPos = GetDrillFrontPos(railPos, travelFacing);
+        BlockPos abovePos = frontPos.UpCopy();
+
+        Block frontBlock = World.BlockAccessor.GetBlock(frontPos);
+        Block aboveBlock = World.BlockAccessor.GetBlock(abovePos);
+
+        if (!CanDrill(frontBlock, frontPos) || !CanDrill(aboveBlock, abovePos)) return false;
+        if (!TryConsumeRailFromPlayer()) return false;
+
+        if (aboveBlock.Id != 0) World.BlockAccessor.BreakBlock(abovePos, null);
+        if (frontBlock.Id != 0) World.BlockAccessor.BreakBlock(frontPos, null);
+
+        PlaceCurveRail(frontPos, travelFacing, turnFacing);
+        World.PlaySoundAt(SoundDrill, Pos.X, Pos.Y, Pos.Z, null, randomizePitch: false);
+        return true;
+    }
+
+    private void PlaceCurveRail(BlockPos pos, BlockFacing travelFacing, BlockFacing turnFacing)
+    {
+        string variantType = GetCurveVariant(travelFacing, turnFacing);
+        AssetLocation code = new($"vintagecarts:rail-{variantType}");
+        Block block = World.BlockAccessor.GetBlock(code);
+        if (block == null || block.Id == 0) return;
+
+        World.BlockAccessor.SetBlock(block.Id, pos);
+        if (block is BlockRail br)
+            br.UpdateNeighborRailsPublic(World, pos);
+    }
+
+    // Exact block code suffixes as used in BlockRail.DetermineRailVariant.
+    // Note: north+west = "curved_wn" and south+east = "curved_es" (not nw/se).
+    private static string GetCurveVariant(BlockFacing a, BlockFacing b)
+    {
+        bool n = a == BlockFacing.NORTH || b == BlockFacing.NORTH;
+        bool s = a == BlockFacing.SOUTH || b == BlockFacing.SOUTH;
+        bool e = a == BlockFacing.EAST  || b == BlockFacing.EAST;
+        bool w = a == BlockFacing.WEST  || b == BlockFacing.WEST;
+
+        if (n && e) return "curved_ne";
+        if (n && w) return "curved_wn";
+        if (s && e) return "curved_es";
+        return "curved_sw";
     }
 
     /// <summary>

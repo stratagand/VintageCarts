@@ -47,10 +47,22 @@ public class VintageCartsModSystem : ModSystem
             .RegisterMessageType<FuelSlotChangedPacket>()
             .RegisterMessageType<CartPositionPacket>()
             .RegisterMessageType<OpenStorageGuiPacket>()
-            .SetMessageHandler<FuelSlotChangedPacket>(OnClientFuelSlotChanged);
+            .RegisterMessageType<DrillDirectionPacket>()
+            .SetMessageHandler<FuelSlotChangedPacket>(OnClientFuelSlotChanged)
+            .SetMessageHandler<DrillDirectionPacket>(OnClientDrillDirection);
+    }
+
+    private void OnClientDrillDirection(IServerPlayer fromPlayer, DrillDirectionPacket packet)
+    {
+        if (fromPlayer.Entity?.World.GetEntityById(packet.EntityId) is EntityDrillMinecart cart
+            && cart.Controller == fromPlayer.Entity)
+        {
+            cart.DrillDir = (EntityDrillMinecart.DrillDirection)packet.Direction;
+        }
     }
 
     private readonly Dictionary<long, GuiDialogStorageMinecart> _openStorageDialogs = new();
+    private GuiHudDrillMinecart? _drillHud;
 
     public override void StartClientSide(ICoreClientAPI api)
     {
@@ -60,9 +72,28 @@ public class VintageCartsModSystem : ModSystem
             .RegisterMessageType<FuelSlotChangedPacket>()
             .RegisterMessageType<CartPositionPacket>()
             .RegisterMessageType<OpenStorageGuiPacket>()
+            .RegisterMessageType<DrillDirectionPacket>()
             .SetMessageHandler<OpenFuelGuiPacket>(packet => OnOpenFuelGui(api, packet))
             .SetMessageHandler<CartPositionPacket>(packet => OnCartPositionUpdate(api, packet))
             .SetMessageHandler<OpenStorageGuiPacket>(packet => OnOpenStorageGui(api, packet));
+
+        api.Event.RegisterGameTickListener(_ => UpdateDrillHud(api), 250);
+    }
+
+    private void UpdateDrillHud(ICoreClientAPI api)
+    {
+        var drillCart = api.World.Player?.Entity?.MountedOn?.Entity as EntityDrillMinecart;
+
+        if (drillCart != null && _drillHud == null)
+        {
+            _drillHud = new GuiHudDrillMinecart(api, drillCart);
+            _drillHud.TryOpen();
+        }
+        else if (drillCart == null && _drillHud != null)
+        {
+            _drillHud.TryClose();
+            _drillHud = null;
+        }
     }
 
     private void OnOpenFuelGui(ICoreClientAPI api, OpenFuelGuiPacket packet)

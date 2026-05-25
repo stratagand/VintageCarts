@@ -48,3 +48,16 @@ public class OpenStorageGuiPacket
     [ProtoMember(1)]
     public long EntityId { get; set; }
 }
+
+// ── Drill cart packets ──────────────────────────────────────────────────────
+
+/// <summary>Client → server: set the locked drill direction (0=Level, 1=Ascend, 2=Descend).</summary>
+[ProtoContract]
+public class DrillDirectionPacket
+{
+    [ProtoMember(1)]
+    public long EntityId { get; set; }
+
+    [ProtoMember(2)]
+    public int Direction { get; set; }
+}

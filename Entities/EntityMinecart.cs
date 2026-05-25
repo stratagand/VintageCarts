@@ -291,7 +291,7 @@ public class EntityMinecart : Entity, IMountable
         bool movingBackward  = hasPassenger && _seats[0].Controls.Backward;
         bool movingLeft      = hasPassenger && _seats[0].Controls.Left;
         bool movingRight     = hasPassenger && _seats[0].Controls.Right;
-        bool braking         = hasPassenger && _seats[0].Controls.Jump;
+        bool braking         = hasPassenger && _seats[0].Controls.Jump && SpacebarBrakes;
         // hasForwardDirectionalInput excludes backward so junction branch selection
         // isn't triggered when the rider is reversing — backward retraces the entry path.
         bool hasForwardDirectionalInput = movingForward || movingLeft || movingRight;
@@ -1075,6 +1075,9 @@ public class EntityMinecart : Entity, IMountable
     /// <summary>Called when the cart reaches the end of laid track.
     /// Return true to suppress the default stop behaviour (subclass handled it).</summary>
     protected virtual bool OnReachedRailEnd(BlockFacing travelFacing, BlockPos railPos) => false;
+
+    /// <summary>When false, spacebar does not brake this cart (subclass handles spacebar differently).</summary>
+    protected virtual bool SpacebarBrakes => true;
 
     protected static BlockPos OffsetPos(BlockPos pos, BlockFacing facing)
     {
