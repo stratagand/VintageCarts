@@ -74,6 +74,7 @@ public class EntityDrillMinecart : EntityMinecart
                 Location = SoundDrill,
                 ShouldLoop = true,
                 Position = new Vec3f((float)Pos.X, (float)Pos.Y, (float)Pos.Z),
+                RelativePosition = false,
                 DisposeOnFinish = false,
                 Volume = 1.0f
             });
